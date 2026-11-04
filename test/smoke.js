@@ -34,8 +34,8 @@ console.log("creatorhub_ping =>", JSON.stringify(result));
 
 const assert = (cond, msg) => { if (!cond) { console.error("ASSERT FAIL:", msg); process.exitCode = 1; } else console.log("ASSERT OK:", msg); };
 assert(result.ok === true, "ok is true");
-assert(result.plugin === "creatorhub-dsh", "plugin name");
+assert(result.plugin === "dsh-SAmanager", "plugin name");
 assert(result.phase === 1, "phase is 1");
 assert(result.baseUrl === "http://127.0.0.1:8731", "baseUrl default is loopback 8731");
-assert(result.autostart === false, "autostart default is false");
+assert(result.autostart === true, "autostart default is true (backend starts with the plugin)");
 console.log("SMOKE PASS");

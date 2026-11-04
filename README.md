@@ -1,4 +1,4 @@
-# creatorhub-dsh
+# dsh-SAmanager
 
 DeepSeek Harness (DSH) Cordis plugin that bridges the local **CreatorHub**
 content workbench (抖音 / 小红书 / 快手 / 视频号 / TikTok) into agent tools and a
@@ -12,7 +12,7 @@ Status: Phase 6 (config bridge + docs + packaging). Version 0.1.0, MIT.
         ┌─────────────────────── DSH host (Node, Cordis tree) ───────────────────────┐
         │  lib/index.js                                                             │
         │    22 tools: 5 built-in + 6 read-only + 10 approval-gated writes + config  │
-        │    ctx.inject(["webServer"]) ──> GET /creatorhub-dsh/config  (read-only)   │
+        │    ctx.inject(["webServer"]) ──> GET /dsh-samanager/config  (read-only)   │
         └───────────────┬───────────────────────────────────────────┬───────────────┘
                         │ loopback HTTP                             │ same-origin fetch
                         v                                           v
@@ -34,7 +34,7 @@ Status: Phase 6 (config bridge + docs + packaging). Version 0.1.0, MIT.
   Missing service, missing agent, thrown error, or any non-grant outcome fails closed.
 - **Config bridge**: the client half cannot read the host `ctx` (the client runner
   mounts it with no config — `dsh-cordis-client-runner/lib/client.js:564`), so the host
-  registers a read-only exact route `GET /creatorhub-dsh/config` behind the connection
+  registers a read-only exact route `GET /dsh-samanager/config` behind the connection
   Host/Origin fence, and the panel fetches it. Resolution order:
   **bridge → `config.baseUrl` → `ctx.config.baseUrl` → default `http://127.0.0.1:8731`**;
   any non-loopback value is rejected.
@@ -73,7 +73,7 @@ Install into a profile (a local path installs as a `link:` dependency):
 
 Compose check:
 
-    dsh --profile <name> --dump-config          # expect: id: creatorhub / name: creatorhub-dsh
+    dsh --profile <name> --dump-config          # expect: id: dsh-samanager / name: dsh-SAmanager
     dsh --profile <name> --dump-config-schema   # expect: the creatorhub config fragment
 
 Tests (no standalone Node is required; the bundled runtime runs them):
@@ -105,10 +105,10 @@ build step, no JSX, no external resources); the factory returns `{ apply, inject
 Contributions use the real slot contract:
 
     ctx.slots.inject("sidebar.panellist", () => ctx.slots.register(
-      { name: "sidebar.panellist", id: "creatorhub", order: 50, label: "CreatorHub" },
+      { name: "sidebar.panellist", id: "dsh-samanager", order: 50, label: "SA Manager" },
       CreatorHubIcon));
     ctx.slots.inject("main", () => ctx.slots.register(
-      { name: "main", key: "creatorhub" },
+      { name: "main", key: "dsh-samanager" },
       CreatorHubPanel));
 
 The panel shows the plugin name, the effective `baseUrl`, the **config source**
@@ -126,7 +126,7 @@ supported, non-hacky path.
 ### Manual test checklist (desktop GUI)
 
 1. Install the plugin into the desktop profile and restart DSH.
-2. Sidebar shows a **CreatorHub** entry with the check-mark icon.
+2. Sidebar shows a **SA Manager** entry with the check-mark icon.
 3. Selecting it shows the panel: name, base URL, **配置来源：宿主配置桥** (or
    **配置来源：默认地址** with the amber unconfirmed warning), and a status dot.
 4. CreatorHub stopped → red 服务离线; after `creatorhub_start` (or manual start) → green
@@ -139,7 +139,7 @@ supported, non-hacky path.
 
 1. **Config bridge is an HTTP route, not the official client-config mechanism.**
    0.2.1-rc.5 has no host→client config channel, so this plugin registers its own
-   read-only route (`GET /creatorhub-dsh/config`) gated by the connection fence.
+   read-only route (`GET /dsh-samanager/config`) gated by the connection fence.
    Replace it when an official mechanism lands.
 2. **GUI rendering is unverified here.** This environment is CLI/headless; the button
    path, icon rendering and dot colouring need the desktop checklist above.

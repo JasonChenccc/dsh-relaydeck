@@ -3,6 +3,7 @@
 // Harness: monkey-patched global fetch counts Node-side HTTP requests, and a
 // mock ctx.get("approval") returns scripted outcomes.
 import { registerHooks } from "node:module";
+import { spawn } from "node:child_process";
 
 const ASAR = "file:///D:/dsh/resources/app.asar/dsh/node_modules/@deepseek-ai";
 registerHooks({
@@ -14,7 +15,7 @@ registerHooks({
 });
 
 const ROOT_DIR = "D:/work/work/workstation/creatorhub-main/creatorhub-main";
-const BASE = "http://127.0.0.1:8731";
+const BASE = "http://127.0.0.1:18731";
 
 // --- fetch instrumentation -------------------------------------------------
 const realFetch = globalThis.fetch;
@@ -49,15 +50,45 @@ const plugin = await import("../lib/index.js");
 const tools = new Map();
 const logs = [];
 let disposeEffect = null;
+// Test-only subprocess stub mirroring @deepseek-ai/dsh-subprocess: the plugin now
+// delegates process ownership to the framework, so the harness supplies the same
+// { done, collected, terminate, waitForExit } handle shape.
+function makeSubprocess() {
+  return {
+    spawn(spec) {
+      const child = spawn(spec.argv[0], spec.argv.slice(1), { cwd: spec.cwd, stdio: ["ignore", "pipe", "pipe"] });
+      let out = "";
+      let err = "";
+      child.stdout.on("data", (d) => { out += d.toString(); });
+      child.stderr.on("data", (d) => { err += d.toString(); });
+      const done = new Promise((resolve) => child.on("exit", (code, signal) => resolve({ exitCode: code, signal })));
+      done.catch(() => {});
+      return {
+        done,
+        collected: {
+          stdout: { readFrom: (offset) => ({ text: out.slice(offset || 0), nextOffset: out.length }) },
+          stderr: { readFrom: (offset) => ({ text: err.slice(offset || 0), nextOffset: err.length }) }
+        },
+        terminate: () => new Promise((resolve) => {
+          const killer = spawn("taskkill", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+          killer.on("close", resolve);
+          killer.on("error", resolve);
+        }),
+        waitForExit: () => done
+      };
+    }
+  };
+}
 const ctx = {
   tools: { register: (def) => { tools.set(def.name, def); return () => {}; } },
   logger: { info: (m) => logs.push(String(m)), warn: (m) => logs.push(String(m)), error: () => {}, debug: () => {} },
   effect: (fn) => { disposeEffect = fn(); return () => {}; },
+  subprocess: makeSubprocess(),
   inject: () => {},
   get: (name) => { if (name !== "approval") return undefined; return approvalMissing ? undefined : mockApproval; }
 };
 
-const cfg = plugin.Config["~standard"].validate({ baseUrl: BASE, rootDir: ROOT_DIR }).value;
+const cfg = plugin.Config["~standard"].validate({ baseUrl: BASE, rootDir: ROOT_DIR, autostart: false }).value;
 plugin.apply(ctx, cfg);
 
 const assert = (cond, msg) => { if (!cond) { console.error("ASSERT FAIL:", msg); process.exitCode = 1; } else console.log("ASSERT OK:", msg); };

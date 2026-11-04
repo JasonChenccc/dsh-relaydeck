@@ -71,9 +71,9 @@
 // host：可选注入 webServer（headless 没有它，硬注入会让插件永远等待）
 ctx.inject(["webServer"], (webCtx) => {
   webCtx.effect(() => webCtx.webServer.register({
-    kind: "exact", path: "/creatorhub-dsh/config",
+    kind: "exact", path: "/dsh-samanager/config",
     handler: async (req, res) => { /* connection.requestRejection(req) 围栏 + GET + JSON */ }
-  }), "creatorhub-dsh: config route");
+  }), "dsh-SAmanager: config route");
 });
 ```
 

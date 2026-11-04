@@ -1,6 +1,6 @@
 // Phase 6 config-bridge test.
 // Host half: the plugin must register a loopback-only, read-only exact route
-// ({ kind: "exact", path: "/creatorhub-dsh/config" }) gated by the connection
+// ({ kind: "exact", path: "/dsh-samanager/config" }) gated by the connection
 // fence, plus the read-only creatorhub_config_get tool.
 // Client half: the bridge fetch never throws and non-loopback values fall back.
 // This exercises the handler in-process; it does NOT open a socket.
@@ -52,8 +52,8 @@ const cfg = plugin.Config["~standard"].validate({ baseUrl: "http://127.0.0.1:873
 plugin.apply(makeHostCtx(), cfg);
 
 console.log("=== host route registration ===");
-const route = routes.find((r) => r.path === "/creatorhub-dsh/config");
-assert(!!route, "registers /creatorhub-dsh/config");
+const route = routes.find((r) => r.path === "/dsh-samanager/config");
+assert(!!route, "registers /dsh-samanager/config");
 assert(route.kind === "exact", "route kind is exact");
 assert(typeof route.handler === "function", "route has a handler");
 
@@ -64,7 +64,7 @@ function makeRes() {
     end(chunk) { if (chunk !== undefined) this.body += chunk; this.ended = true; }
   };
 }
-const getReq = { method: "GET", url: "/creatorhub-dsh/config", headers: { host: "127.0.0.1", origin: "http://127.0.0.1" } };
+const getReq = { method: "GET", url: "/dsh-samanager/config", headers: { host: "127.0.0.1", origin: "http://127.0.0.1" } };
 
 console.log("\n=== handler: trusted GET ===");
 fenceResult = undefined;

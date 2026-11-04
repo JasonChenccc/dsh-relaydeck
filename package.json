@@ -1,7 +1,7 @@
 {
-  "name": "creatorhub-dsh",
+  "name": "dsh-SAmanager",
   "version": "0.1.0",
-  "description": "CreatorHub (local 抖音/小红书/快手/视频号/TikTok content workbench) bridge for DeepSeek Harness: managed backend lifecycle, read-only API tools, approval-gated write tools and a desktop sidebar panel.",
+  "description": "SA Manager — DeepSeek Harness desktop integration for the local CreatorHub workbench (抖音/小红书/快手/视频号/TikTok): managed backend lifecycle, read-only API tools, approval-gated write tools and a native sidebar panel.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -10,12 +10,13 @@
     "./client": "./client.js"
   },
   "files": [
-    "lib/index.js",
+    "lib",
     "client.js",
     "icon.svg",
     "cordis.patch.yml",
     "README.md",
     "docs",
+    "scripts",
     "test"
   ],
   "license": "MIT",
@@ -23,7 +24,8 @@
     "dsh-plugin",
     "deepseek-harness",
     "creatorhub",
-    "cordis"
+    "cordis",
+    "dsh-samanager"
   ],
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",

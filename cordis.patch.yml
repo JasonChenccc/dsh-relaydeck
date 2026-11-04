@@ -1,5 +1,5 @@
-# creatorhub-dsh bundle patch: mounts the plugin into a profile's layer stack.
+# dsh-SAmanager bundle patch: mounts the plugin into a profile's layer stack.
 # The plugin row's `id` line intentionally carries no trailing comment.
 - insert:
-    - id: creatorhub
-      name: 'creatorhub-dsh'
+    - id: dsh-samanager
+      name: 'dsh-SAmanager'
