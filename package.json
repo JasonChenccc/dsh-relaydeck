@@ -6,13 +6,15 @@
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./client": "./client.js"
   },
   "files": [
     "lib/index.js",
     "cordis.patch.yml",
     "README.md",
-    "test"
+    "test",
+    "client.js"
   ],
   "license": "MIT",
   "keywords": [
@@ -29,6 +31,9 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
     }
   }
 }
