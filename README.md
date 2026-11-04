@@ -81,14 +81,46 @@ external side effects inside the CreatorHub process.
 ## Desktop panel (client half)
 
 `dsh.client = { "platform": "web" }` plus `exports["./client"] = "./client.js"`. The
-browser half is a native-JS `window.__ModuleLoader__.load` bundle (no build step, no
-JSX, no external resources). It registers a sidebar panel: a `sidebar.panellist`
-entry (id `creatorhub`) and the matching layout `main` keyed slot.
+browser half is a native-JS `window.__ModuleLoader__.load({ id, factory })` bundle
+(no build step, no JSX, no external resources); the factory returns
+`{ apply, inject }` with `inject = ["slots"]`.
+
+Contributions use the real slot contract (verified against
+`dsh-client-ui-schedule` / `dsh-client-ui-plugin-manager` and the client-runner
+contract catalog):
+
+```js
+ctx.slots.inject("sidebar.panellist", () => ctx.slots.register(
+  { name: "sidebar.panellist", id: "creatorhub", order: 50, label: "CreatorHub" },
+  CreatorHubIcon));
+ctx.slots.inject("main", () => ctx.slots.register(
+  { name: "main", key: "creatorhub" },
+  CreatorHubPanel));
+```
+
+- `sidebar.panellist` is a root-scoped **list** slot: `id` required, `order` and
+  `label` optional (`label` accepts `string | (() => string)`); the sidebar renders
+  the row and the panel id addresses the matching `main` entry.
+- `main` is a root-scoped **keyed** slot: `key` required, and it must equal the
+  panellist `id` ("Central panel selected by sidebar entry id").
 
 The panel shows the plugin name, the effective `baseUrl`, a `/health` status dot
 (polled every 30 s; red on failure) and an **打开工作台** button that calls
-`window.open(baseUrl)`. `baseUrl` comes from the host-injected plugin config and is
-loopback-guarded; the constant `http://127.0.0.1:8731` is only a fallback.
+`window.open(baseUrl)`.
+
+### baseUrl injection — known gap in 0.2.1-rc.5
+
+The client half reads `config.baseUrl`, then `ctx.config.baseUrl`, then
+`ctx.get("creatorhubConfig").baseUrl`, and takes the first **loopback** value;
+otherwise it falls back to `http://127.0.0.1:8731`.
+
+**There is no host→client config bridge in this version:**
+`@deepseek-ai/dsh-cordis-client-runner` mounts each client half with
+`loader.create({ name: moduleId })` (client.js:564) — no config is passed — so
+`apply(ctx, config)` receives `undefined`. The panel therefore uses the loopback
+default today. The candidate chain is kept so a future bridge (or a host-served
+config endpoint) can supply the value without touching the panel. Per the hard
+constraint the default is loopback-only and no non-loopback address is accepted.
 
 **Why a button, not an iframe:** the DSH Web GUI authenticates through a signed
 session cookie and Host/Origin fences, and the CreatorHub workbench is a separate
@@ -96,7 +128,6 @@ origin with its own (absent) auth and its own long-lived session. Embedding it v
 `<iframe>` would either be blocked by CSP/`frame-ancestors` or create a second
 unmanaged session, and "fixing" that would mean weakening the host fences. A plain
 `window.open` to the loopback origin is the supported, non-hacky path.
-
 ### Manual test checklist (desktop GUI — not runnable in this CLI/headless env)
 
 1. Install the plugin into the desktop profile and restart DSH.

@@ -1,8 +1,8 @@
 // Phase 5 client-half contract test.
 // Executes the browser bundle in Node with a stubbed window.__ModuleLoader__ and
 // a stubbed require("react"), then calls apply() with a fake context.
-// This verifies the CONTRACT (manifest shape, exports, slot registrations,
-// loopback guard). It does NOT verify GUI rendering.
+// Verifies the CONTRACT (manifest shape, exports, slot contributions via
+// ctx.slots.inject, loopback guard). It does NOT verify GUI rendering.
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -41,23 +41,27 @@ assert(typeof mod.apply === "function", "module exports apply(ctx, config)");
 assert(Array.isArray(mod.inject), "module exports inject array");
 assert(mod.inject.includes("slots"), "inject declares the slots service");
 
-// --- 3. apply registers the sidebar panel ----------------------------------
-console.log("\n=== slot registration ===");
+// --- 3. apply contributes the sidebar panel --------------------------------
+console.log("\n=== slot contributions ===");
 function makeCtx() {
+  const injections = [];
   const registrations = [];
-  let effectFn = null;
   const ctx = {
-    slots: { register: (def, comp) => { registrations.push({ def, comp }); return () => {}; } },
-    effect: (fn) => { effectFn = fn; return () => {}; },
+    slots: {
+      inject: (name, cb) => { injections.push(name); cb(); return () => {}; },
+      register: (def, comp) => { registrations.push({ def, comp }); return () => {}; }
+    },
+    effect: (fn) => { fn(); return () => {}; },
     get: () => undefined
   };
-  return { ctx, registrations, getEffect: () => effectFn };
+  return { ctx, injections, registrations };
 }
 
 const run1 = makeCtx();
 const result1 = mod.apply(run1.ctx, { baseUrl: "http://127.0.0.1:9999" });
 assert(result1 && result1.baseUrl === "http://127.0.0.1:9999", "host-injected baseUrl is used");
 assert(result1.panelId === "creatorhub", "panel id is creatorhub");
+assert(JSON.stringify(run1.injections) === JSON.stringify(["sidebar.panellist", "main"]), "contributes via ctx.slots.inject into sidebar.panellist then main");
 assert(run1.registrations.length === 2, "exactly two slot registrations");
 const listReg = run1.registrations.find((r) => r.def.name === "sidebar.panellist");
 const mainReg = run1.registrations.find((r) => r.def.name === "main");
@@ -69,7 +73,6 @@ assert(typeof listReg.comp === "function", "sidebar.panellist entry carries an i
 assert(!!mainReg, "registers into the layout main slot");
 assert(mainReg && mainReg.def.key === "creatorhub", "main slot key matches panel id");
 assert(typeof mainReg.comp === "function", "main slot carries a panel component");
-assert(typeof run1.getEffect() === "function", "apply registers a cleanup effect");
 
 // --- 4. loopback guard -----------------------------------------------------
 console.log("\n=== loopback guard ===");

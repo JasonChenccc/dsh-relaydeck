@@ -14,7 +14,8 @@
     "cordis.patch.yml",
     "README.md",
     "test",
-    "client.js"
+    "client.js",
+    "icon.svg"
   ],
   "license": "MIT",
   "keywords": [
@@ -35,5 +36,6 @@
     "client": {
       "platform": "web"
     }
-  }
+  },
+  "icon": "icon.svg"
 }

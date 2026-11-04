@@ -91,15 +91,22 @@ window.__ModuleLoader__.load({
         );
       }
 
-      var disposers = [];
-      disposers.push(ctx.slots.register({ name: "sidebar.panellist", id: PANEL_ID, order: 50, label: "CreatorHub" }, CreatorHubIcon));
-      disposers.push(ctx.slots.register({ name: "main", key: PANEL_ID }, CreatorHubPanel));
-      ctx.effect(function () {
-        return function () {
-          for (var i = 0; i < disposers.length; i++) {
-            try { if (typeof disposers[i] === "function") disposers[i](); } catch (err) {}
-          }
-        };
+      // Real contract, verified against dsh-client-ui-schedule and
+      // dsh-client-ui-plugin-manager: every contribution is deferred with
+      // ctx.slots.inject(slotName, () => ctx.slots.register(definition, Component)).
+      ctx.slots.inject("sidebar.panellist", function () {
+        return ctx.slots.register({
+          name: "sidebar.panellist",
+          id: PANEL_ID,
+          order: 50,
+          label: "CreatorHub"
+        }, CreatorHubIcon);
+      });
+      ctx.slots.inject("main", function () {
+        return ctx.slots.register({
+          name: "main",
+          key: PANEL_ID
+        }, CreatorHubPanel);
       });
       return { baseUrl: baseUrl, panelId: PANEL_ID };
     }
