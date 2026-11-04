@@ -1,30 +1,54 @@
 # creatorhub-dsh
 
 DeepSeek Harness (DSH) Cordis plugin that bridges the local **CreatorHub**
-content workbench (抖音 / 小红书 / 快手 / 视频号 / TikTok) into agent tools.
+content workbench (抖音 / 小红书 / 快手 / 视频号 / TikTok) into agent tools and a
+desktop sidebar panel.
 
-## Status: Phase 5 — desktop sidebar panel (client half)
+Status: Phase 6 (config bridge + docs + packaging). Version 0.1.0, MIT.
 
-All HTTP is loopback-only (127.0.0.1 / localhost). Every write tool requires
-approval through the composed `ctx.get("approval")` service and fails closed
-when that service is missing, unreachable, or rejects.
+## Architecture
 
-## Read tools
+```
+        ┌─────────────────────── DSH host (Node, Cordis tree) ───────────────────────┐
+        │  lib/index.js                                                             │
+        │    22 tools: 5 built-in + 6 read-only + 10 approval-gated writes + config  │
+        │    ctx.inject(["webServer"]) ──> GET /creatorhub-dsh/config  (read-only)   │
+        └───────────────┬───────────────────────────────────────────┬───────────────┘
+                        │ loopback HTTP                             │ same-origin fetch
+                        v                                           v
+        ┌──── CreatorHub :8731 ────┐              ┌──── DSH web client (browser) ────┐
+        │ FastAPI + SQLite + CDP   │              │  client.js (side panel)          │
+        │ /health, /api/*          │              │   ctx.slots.inject(              │
+        └──────────────────────────┘              │     "sidebar.panellist"/"main")  │
+                                                  └──────────────────────────────────┘
+```
 
-| tool | endpoint |
-|---|---|
-| creatorhub_ping | — (Phase 1 stub) |
-| creatorhub_status | GET /health |
-| creatorhub_start / creatorhub_stop | spawn/stop the managed backend |
-| creatorhub_request | GET any /api/*; non-GET must be whitelisted + approved |
-| creatorhub_overview | GET /api/overview/summary |
-| creatorhub_accounts | GET /api/accounts |
-| creatorhub_account_stats | GET /api/account-stats/{id} |
-| creatorhub_task_queue | GET /api/task-queue |
-| creatorhub_monitors | GET /api/monitors |
-| creatorhub_collections | GET /api/collections |
+**Chains**
 
-## Write tools (approval-gated)
+- **Write path**: tool → `normalizeApiPath` (reject absolute/`//`/`..`) → shared
+  `WRITE_WHITELIST` (method + path template) → approval ×1 (medium) or ×2 (high) →
+  redacted audit log → `callApi` on the loopback base URL. No match → `forbidden`;
+  not `allowed-once` → `approval-denied` / `secondary-approval-denied`; no request sent.
+- **Approval gate**: `ctx.get("approval").request({agent, toolName, callId?, reason?,
+  displayReason?, signal?})` → `allowed-once | rejected | cancelled | unavailable`.
+  Missing service, missing agent, thrown error, or any non-grant outcome fails closed.
+- **Config bridge**: the client half cannot read the host `ctx` (the client runner
+  mounts it with no config — `dsh-cordis-client-runner/lib/client.js:564`), so the host
+  registers a read-only exact route `GET /creatorhub-dsh/config` behind the connection
+  Host/Origin fence, and the panel fetches it. Resolution order:
+  **bridge → `config.baseUrl` → `ctx.config.baseUrl` → default `http://127.0.0.1:8731`**;
+  any non-loopback value is rejected.
+
+## Tools
+
+Built-in: `creatorhub_ping`, `creatorhub_status`, `creatorhub_start`, `creatorhub_stop`,
+`creatorhub_request` (GET is an unapproved read; non-GET is whitelist + approval gated).
+
+Read-only: `creatorhub_overview`, `creatorhub_accounts`, `creatorhub_account_stats`,
+`creatorhub_task_queue`, `creatorhub_monitors`, `creatorhub_collections`,
+`creatorhub_config_get`.
+
+Approval-gated writes (risk / approvals):
 
 | tool | method + path | risk | approvals |
 |---|---|---|---|
@@ -39,32 +63,20 @@ when that service is missing, unreachable, or rejects.
 | creatorhub_message | POST /api/account-actions (send_dm) | high | 2 |
 | creatorhub_proxy_set | PUT /api/accounts/{account_id}/proxy | medium | 1 |
 
-Approval contract (verified in @deepseek-ai/dsh-user-approval):
-`ctx.get("approval").request({agent, toolName, callId?, reason?, displayReason?, signal?})`
-returns "allowed-once" | "rejected" | "cancelled" | "unavailable"; only
-"allowed-once" grants. High-risk tools ask twice; the second displayReason.zh
-starts with 再次确认 and restates the action, parameters, and irreversibility.
-Write calls are logged with the path and a redacted parameter summary
-(credentials never enter the log).
+All HTTP is loopback-only (127.0.0.1 / localhost); non-loopback base URLs are rejected.
 
-Route sources (app/main.py): overview/summary:1711, accounts:1728,
-account-stats:3560, task-queue:1880, monitors:8112, collections:7485;
-login:1469+, collections POST:7408, cancel:7661, monitors POST:7923,
-monitors DELETE:8148, share-download:6455, publish:10152, comment-rules:10813,
-account-actions:4540, account proxy:5035.
+## Install / run / test / package
 
-## Config
+Install into a profile (a local path installs as a `link:` dependency):
 
-| field | default |
-|---|---|
-| baseUrl | http://127.0.0.1:8731 |
-| autostart | false |
-| rootDir | D:\work\work\workstation\creatorhub-main\creatorhub-main |
-| healthTimeoutMs | 120000 |
-| requestTimeoutMs | 30000 |
-| maxLogBytes | 65536 |
+    dsh plugin --profile <name> add <path-to-this-directory>
 
-## Tests
+Compose check:
+
+    dsh --profile <name> --dump-config          # expect: id: creatorhub / name: creatorhub-dsh
+    dsh --profile <name> --dump-config-schema   # expect: the creatorhub config fragment
+
+Tests (no standalone Node is required; the bundled runtime runs them):
 
     set ELECTRON_RUN_AS_NODE=1
     "D:\dsh\DeepSeek Harness.exe" test/smoke.js
@@ -72,74 +84,79 @@ account-actions:4540, account proxy:5035.
     "D:\dsh\DeepSeek Harness.exe" test/phase3-readonly.js
     "D:\dsh\DeepSeek Harness.exe" test/phase4-io.js
     "D:\dsh\DeepSeek Harness.exe" test/client-contract.js
+    "D:\dsh\DeepSeek Harness.exe" test/config-bridge.js
 
-phase4-io.js injects a mock approval service and counts Node-side HTTP via a
-monkey-patched fetch: deny and secondary-deny must send no request; grant must
-send exactly one. The counter proves plugin-side HTTP only, not the absence of
-external side effects inside the CreatorHub process.
+The IO tests start the real CreatorHub backend on **port 8731** (not 8000; that port is
+often taken by unrelated services) and stop it afterwards. `phase2-io.js` and
+`phase3-readonly.js` need a provisioned CreatorHub environment; run
+`python creatorhub.py install --skip-browser --skip-node` once if the venv is missing.
+
+Package contents (`package.json.files`): `lib/index.js`, `client.js`, `icon.svg`,
+`cordis.patch.yml`, `README.md`, `docs/`, `test/`. `.venv/`, `data/` and `config.yaml`
+are never included.
 
 ## Desktop panel (client half)
 
 `dsh.client = { "platform": "web" }` plus `exports["./client"] = "./client.js"`. The
-browser half is a native-JS `window.__ModuleLoader__.load({ id, factory })` bundle
-(no build step, no JSX, no external resources); the factory returns
-`{ apply, inject }` with `inject = ["slots"]`.
+browser half is a native-JS `window.__ModuleLoader__.load({ id, factory })` bundle (no
+build step, no JSX, no external resources); the factory returns `{ apply, inject }` with
+`inject = ["slots"]`.
 
-Contributions use the real slot contract (verified against
-`dsh-client-ui-schedule` / `dsh-client-ui-plugin-manager` and the client-runner
-contract catalog):
+Contributions use the real slot contract:
 
-```js
-ctx.slots.inject("sidebar.panellist", () => ctx.slots.register(
-  { name: "sidebar.panellist", id: "creatorhub", order: 50, label: "CreatorHub" },
-  CreatorHubIcon));
-ctx.slots.inject("main", () => ctx.slots.register(
-  { name: "main", key: "creatorhub" },
-  CreatorHubPanel));
-```
+    ctx.slots.inject("sidebar.panellist", () => ctx.slots.register(
+      { name: "sidebar.panellist", id: "creatorhub", order: 50, label: "CreatorHub" },
+      CreatorHubIcon));
+    ctx.slots.inject("main", () => ctx.slots.register(
+      { name: "main", key: "creatorhub" },
+      CreatorHubPanel));
 
-- `sidebar.panellist` is a root-scoped **list** slot: `id` required, `order` and
-  `label` optional (`label` accepts `string | (() => string)`); the sidebar renders
-  the row and the panel id addresses the matching `main` entry.
-- `main` is a root-scoped **keyed** slot: `key` required, and it must equal the
-  panellist `id` ("Central panel selected by sidebar entry id").
+The panel shows the plugin name, the effective `baseUrl`, the **config source**
+(host bridge / injected config / default), a `/health` status dot (30 s poll) and an
+**打开工作台** button. When the source is `default` the panel says the address is
+unconfirmed. If the bridge times out the panel falls back silently and keeps working.
 
-The panel shows the plugin name, the effective `baseUrl`, a `/health` status dot
-(polled every 30 s; red on failure) and an **打开工作台** button that calls
-`window.open(baseUrl)`.
+**Why a button, not an iframe:** the DSH Web GUI authenticates through a signed session
+cookie and Host/Origin fences, and the CreatorHub workbench is a separate origin with its
+own (absent) auth and long-lived session. Embedding it via `<iframe>` would either be
+blocked by CSP/`frame-ancestors` or create a second unmanaged session, and "fixing" that
+would mean weakening the host fences. `window.open` to the loopback origin is the
+supported, non-hacky path.
 
-### baseUrl injection — known gap in 0.2.1-rc.5
-
-The client half reads `config.baseUrl`, then `ctx.config.baseUrl`, then
-`ctx.get("creatorhubConfig").baseUrl`, and takes the first **loopback** value;
-otherwise it falls back to `http://127.0.0.1:8731`.
-
-**There is no host→client config bridge in this version:**
-`@deepseek-ai/dsh-cordis-client-runner` mounts each client half with
-`loader.create({ name: moduleId })` (client.js:564) — no config is passed — so
-`apply(ctx, config)` receives `undefined`. The panel therefore uses the loopback
-default today. The candidate chain is kept so a future bridge (or a host-served
-config endpoint) can supply the value without touching the panel. Per the hard
-constraint the default is loopback-only and no non-loopback address is accepted.
-
-**Why a button, not an iframe:** the DSH Web GUI authenticates through a signed
-session cookie and Host/Origin fences, and the CreatorHub workbench is a separate
-origin with its own (absent) auth and its own long-lived session. Embedding it via
-`<iframe>` would either be blocked by CSP/`frame-ancestors` or create a second
-unmanaged session, and "fixing" that would mean weakening the host fences. A plain
-`window.open` to the loopback origin is the supported, non-hacky path.
-### Manual test checklist (desktop GUI — not runnable in this CLI/headless env)
+### Manual test checklist (desktop GUI)
 
 1. Install the plugin into the desktop profile and restart DSH.
-2. Open the sidebar: a **CreatorHub** entry with the check-mark icon is listed.
-3. Select it: the panel shows the plugin name, `http://127.0.0.1:8731`, and a status dot.
-4. With CreatorHub stopped the dot is red (服务离线); start CreatorHub (or use the
-   `creatorhub_start` tool) and within 30 s the dot turns green (服务在线).
-5. Click **打开工作台**: the CreatorHub workbench opens in a new browser tab at the
-   loopback base URL.
-6. Change the plugin `baseUrl` in the profile patch: the panel shows the new value
-   and the health dot follows it.
+2. Sidebar shows a **CreatorHub** entry with the check-mark icon.
+3. Selecting it shows the panel: name, base URL, **配置来源：宿主配置桥** (or
+   **配置来源：默认地址** with the amber unconfirmed warning), and a status dot.
+4. CreatorHub stopped → red 服务离线; after `creatorhub_start` (or manual start) → green
+   服务在线 within 30 s.
+5. **打开工作台** opens the workbench at the loopback base URL in a new tab.
+6. Change the plugin `baseUrl` in the profile patch and reload: the panel shows the new
+   value with source 宿主配置桥.
+
+## Known limitations
+
+1. **Config bridge is an HTTP route, not the official client-config mechanism.**
+   0.2.1-rc.5 has no host→client config channel, so this plugin registers its own
+   read-only route (`GET /creatorhub-dsh/config`) gated by the connection fence.
+   Replace it when an official mechanism lands.
+2. **GUI rendering is unverified here.** This environment is CLI/headless; the button
+   path, icon rendering and dot colouring need the desktop checklist above.
+3. **Approval requires an open turn.** `approval.request()` throws outside a turn; the
+   plugin catches it and denies. Tools therefore cannot be approved from a non-agent
+   caller.
+4. **`Config.baseUrl` defaults are not visible to the client half.** Unless the row
+   config sets `baseUrl`, the bridge reports the host default and the panel labels it
+   `默认地址`.
+5. **Writes are real.** With an empty database they fail naturally (4xx), but on a
+   populated deployment the write tools perform real platform actions. Approval is the
+   only guard, so review every prompt.
+6. **The test suite proves plugin-side HTTP only.** "No request sent" does not prove the
+   CreatorHub process performed no external action, and a granted request returning 4xx
+   does not prove zero external side effects.
+
 ## Notice
 
-For technical learning and personal content management only. Respect each
-platform rules and local law; respect content copyright and personal privacy.
+For technical learning and personal content management only. Respect each platform
+rules and local law; respect content copyright and personal privacy.

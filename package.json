@@ -1,7 +1,7 @@
 {
   "name": "creatorhub-dsh",
   "version": "0.1.0",
-  "description": "CreatorHub local content-workbench bridge for DeepSeek Harness (Phase 1 skeleton: creatorhub_ping stub, no network, no process spawn)",
+  "description": "CreatorHub (local 抖音/小红书/快手/视频号/TikTok content workbench) bridge for DeepSeek Harness: managed backend lifecycle, read-only API tools, approval-gated write tools and a desktop sidebar panel.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -11,11 +11,12 @@
   },
   "files": [
     "lib/index.js",
+    "client.js",
+    "icon.svg",
     "cordis.patch.yml",
     "README.md",
-    "test",
-    "client.js",
-    "icon.svg"
+    "docs",
+    "test"
   ],
   "license": "MIT",
   "keywords": [
