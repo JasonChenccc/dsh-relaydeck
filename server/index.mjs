@@ -54,7 +54,7 @@ const server = createServer((req, res) => {
 server.listen(port, host, () => {
   log("info", "relaydeck backend ready", { url: "http://" + host + ":" + port, dataDir, version: VERSION, at: nowIso() });
   if (arg("schedule", "1") !== "0") {
-    startScheduler({ db, runFlow: runFlowById, tickMs: schedulerTickMs });
+    startScheduler({ db, runFlow: runFlowById, tickMs: schedulerTickMs, dataDir });
   }
 });
 

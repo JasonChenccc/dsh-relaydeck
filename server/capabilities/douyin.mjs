@@ -150,13 +150,14 @@ register({
   stage: "source",
   title: "抖音 · 我的作品",
   description: "读取当前登录账号的主页作品（封面 + 标题 + 点赞数）。",
-  params: { limit: "最多返回条数（默认 50）", scrolls: "向下滚动次数（默认 3）" },
+  params: { url: "主页地址（默认当前登录账号）", limit: "最多返回条数（默认 50）", scrolls: "向下滚动次数（默认 3）" },
   async run({ params, dataDir }) {
     const limit = Number(params.limit) || 50;
     const raw = params.scrolls === undefined ? 3 : Number(params.scrolls);
     const scrolls = Math.max(0, Math.min(Number.isFinite(raw) ? raw : 3, 20));
+    const target = String(params.url || "").trim() || "https://www.douyin.com/user/self";
     return await withPage(dataDir, async (page) => {
-      await page.navigate("https://www.douyin.com/user/self", { timeoutMs: 45000 });
+      await page.navigate(target, { timeoutMs: 45000 });
       const account = await waitFor(page, readAccount, 20000, 800);
       if (!account) throw new Error("抖音未登录：请先在「账号」页扫码登录。");
       await waitFor(page, extractCards, 20000, 1200);

@@ -9,6 +9,7 @@ import { startLogin, pollLogin, cancelLogin, listLogins, qrImage, verifyBindings
 import { schedulerState, startScheduler, stopScheduler, nextRunAt } from "../scheduler.mjs";
 import { resolveLinks, downloadItems } from "../capabilities/link.mjs";
 import { sendNotification } from "../notify.mjs";
+import { scanMonitor } from "../monitors.mjs";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 
@@ -265,6 +266,13 @@ export function createRouter({ db, version, startedAt, dataDir, runFlowById, sch
   }
 
   // 采集到的原始记录（评论 / 弹幕）
+  // 立即扫描一个监控条目
+  on("POST", "/api/monitors/:id/scan", async (params) => {
+    const monitor = db.prepare("SELECT * FROM monitors WHERE id = ?").get(Number(params.id));
+    if (!monitor) return { statusCode: 404, payload: { error: "monitor not found" } };
+    return { payload: await scanMonitor(db, monitor, dataDir) };
+  });
+
   // 通知测试：真的发一条
   on("POST", "/api/notifications/:id/send-test", async (params) => {
     const channel = db.prepare("SELECT * FROM notifications WHERE id = ?").get(Number(params.id));

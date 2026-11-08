@@ -6,6 +6,7 @@
 // that minute, so a slow run never stacks up.
 import { nowIso } from "./db.mjs";
 import { log, errorText } from "./log.mjs";
+import { scanDueMonitors } from "./monitors.mjs";
 
 let timer = null;
 let running = false;
@@ -94,12 +95,20 @@ function dueNow(flow, now) {
 }
 
 /** One scheduling pass. Exported so tests can drive it without waiting. */
-export async function tick({ db, runFlow, now }) {
+export async function tick({ db, runFlow, now, dataDir }) {
   const at = now ? new Date(now) : new Date();
   stats.ticks += 1;
   stats.lastTickAt = at.toISOString();
   let triggered = 0;
   const rows = db.prepare("SELECT id, name, trigger, cron, enabled, last_run_at FROM flows WHERE enabled = 1 AND trigger != 'manual'").all();
+  // 监控扫描与流程调度共用同一个 tick
+  try {
+    const scanned = await scanDueMonitors(db, dataDir, at);
+    for (const item of scanned) {
+      if (item.state === "ok") stats.triggered += 1;
+    }
+  } catch (error) { stats.lastError = errorText(error); }
+
   for (const flow of rows) {
     if (!dueNow(flow, at)) { stats.skipped += 1; continue; }
     triggered += 1;
@@ -114,13 +123,13 @@ export async function tick({ db, runFlow, now }) {
   return triggered;
 }
 
-export function startScheduler({ db, runFlow, tickMs }) {
+export function startScheduler({ db, runFlow, tickMs, dataDir }) {
   if (timer !== null) return schedulerState();
   const interval = Math.max(5000, Number(tickMs) || 30000);
   timer = setInterval(() => {
     if (running) return;
     running = true;
-    tick({ db, runFlow }).catch((error) => { stats.lastError = errorText(error); }).finally(() => { running = false; });
+    tick({ db, runFlow, dataDir }).catch((error) => { stats.lastError = errorText(error); }).finally(() => { running = false; });
   }, interval);
   timer.unref();
   log("info", "scheduler started", { tickMs: interval });
