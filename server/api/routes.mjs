@@ -7,6 +7,7 @@ import { errorText } from "../log.mjs";
 import { platform, platformIds } from "../platforms.mjs";
 import { startLogin, pollLogin, cancelLogin, listLogins, qrImage, verifyBindings, refreshAccountStats } from "../browser/login.mjs";
 import { schedulerState, startScheduler, stopScheduler, nextRunAt } from "../scheduler.mjs";
+import { resolveLinks, downloadItems } from "../capabilities/link.mjs";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 
@@ -263,6 +264,83 @@ export function createRouter({ db, version, startedAt, dataDir, runFlowById, sch
   }
 
   // 采集到的原始记录（评论 / 弹幕）
+  // 粘贴链接直接下载：解析 → 下载 → 落库，一步完成
+  on("POST", "/api/downloads", async (_params, req) => {
+    const body = await readJson(req);
+    const raw = body.urls !== undefined ? body.urls : body.url;
+    try {
+      const resolved = await resolveLinks(raw, dataDir, body.limit);
+      const result = await downloadItems(resolved.items, dataDir, body.perItem || 1);
+      for (const item of resolved.items) {
+        db.prepare(
+          "INSERT INTO artifacts (platform, item_id, title, author, cover_url, media_json, stats_json, local_path, download_state, collected_at) " +
+          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+          "ON CONFLICT(platform, item_id) DO UPDATE SET title = excluded.title, cover_url = excluded.cover_url, " +
+          "media_json = excluded.media_json, stats_json = excluded.stats_json, local_path = excluded.local_path, download_state = excluded.download_state"
+        ).run(item.platform, item.item_id, item.title || "", item.author || "", item.cover_url || "",
+              JSON.stringify(item.media || []), JSON.stringify(item.stats || {}),
+              item.local_path || "", item.local_path ? "done" : "failed", nowIso());
+      }
+      return {
+        payload: {
+          ok: true,
+          resolved: resolved.items.length,
+          downloaded: result.files,
+          bytes: result.bytes,
+          sizeText: result.bytes > 1048576 ? (result.bytes / 1048576).toFixed(1) + " MB" : Math.round(result.bytes / 1024) + " KB",
+          items: resolved.items.map((x) => ({ item_id: x.item_id, title: x.title, local_path: x.local_path || "", media: (x.media || []).length })),
+          failures: resolved.failures
+        }
+      };
+    } catch (error) {
+      return { statusCode: 400, payload: { ok: false, error: errorText(error) } };
+    }
+  });
+
+  // 统一任务队列：所有板块的待处理项汇到一处
+  on("GET", "/api/queue", () => {
+    const runs = db.prepare("SELECT id, flow_name, state, found, kept, saved, error, started_at FROM runs ORDER BY id DESC LIMIT 60").all();
+    const plans = db.prepare("SELECT id, platform, title, status, created_at FROM publish_plans WHERE status IN ('draft','approved','prepared') ORDER BY id DESC LIMIT 60").all();
+    const files = db.prepare("SELECT id, platform, title, item_id, local_path, download_state, collected_at FROM artifacts WHERE local_path != '' ORDER BY id DESC LIMIT 60").all();
+    const items = [
+      ...runs.map((r) => ({ kind: "run", id: r.id, title: r.flow_name || ("任务 " + r.id), state: r.state, detail: "发现 " + r.found + " · 保留 " + r.kept + " · 写入 " + r.saved, error: r.error, at: r.started_at })),
+      ...plans.map((x) => ({ kind: "plan", id: x.id, title: x.title || ("草稿 " + x.id), state: x.status, detail: "待发布 → " + x.platform, error: "", at: x.created_at })),
+      ...files.map((x) => ({ kind: "download", id: x.id, title: x.title || x.item_id, state: x.download_state, detail: x.local_path, error: "", at: x.collected_at }))
+    ].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    return {
+      items,
+      summary: {
+        runs: runs.length,
+        running: runs.filter((r) => r.state === "running").length,
+        failed: runs.filter((r) => r.state === "failed").length,
+        pendingPlans: plans.filter((x) => x.status === "draft").length,
+        downloads: files.length
+      }
+    };
+  });
+
+  // 工作台指标
+  on("GET", "/api/metrics", () => {
+    const day = (offset) => new Date(Date.now() - offset * 86400000).toISOString().slice(0, 10);
+    const days = [];
+    for (let i = 6; i >= 0; i -= 1) {
+      const key = day(i);
+      const row = db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(found),0) AS found, COALESCE(SUM(saved),0) AS saved, COALESCE(SUM(CASE WHEN state='failed' THEN 1 ELSE 0 END),0) AS bad FROM runs WHERE substr(started_at,1,10) = ?").get(key);
+      days.push({ day: key, runs: row.n, found: row.found, saved: row.saved, failed: row.bad });
+    }
+    const today = days[days.length - 1] || { runs: 0, found: 0, saved: 0, failed: 0 };
+    const total = db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(CASE WHEN state='failed' THEN 1 ELSE 0 END),0) AS bad FROM runs").get();
+    const byPlatform = db.prepare("SELECT platform, COUNT(*) AS n FROM artifacts GROUP BY platform ORDER BY n DESC").all();
+    const nextRuns = db.prepare("SELECT id, name, trigger, cron, last_run_at FROM flows WHERE enabled = 1 AND trigger != 'manual'").all();
+    return {
+      today,
+      total: { runs: total.n, failed: total.bad, failureRate: total.n === 0 ? 0 : Math.round((total.bad / total.n) * 100) },
+      days,
+      byPlatform,
+      scheduled: nextRuns.length
+    };
+  });
+
   on("GET", "/api/records", (params, req) => {
     const url = new URL(req.url, "http://127.0.0.1");
     const kind = url.searchParams.get("kind");

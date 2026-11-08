@@ -120,6 +120,9 @@ function createApiBridge(proxy) {
     },
     bindings: function () { return call("GET", "/api/bindings"); },
     verifyBindings: function () { return call("POST", "/api/bindings/verify", {}, 120000); },
+    queue: function () { return call("GET", "/api/queue"); },
+    metrics: function () { return call("GET", "/api/metrics"); },
+    downloadUrls: function (urls, perItem) { return call("POST", "/api/downloads", { urls: urls, perItem: perItem || 1 }, 600000); },
     areaList: function (path) { return call("GET", "/api/" + path); },
     areaCreate: function (path, body) { return call("POST", "/api/" + path, body); },
     areaUpdate: function (path, id, body) { return call("PUT", "/api/" + path + "/" + encodeURIComponent(String(id)), body); },
@@ -242,17 +245,7 @@ function renderArea(ctx, config) {
 
 
 // ---- lib/panel/views/dashboard.js ----
-// 看板 — 状态、规模、近 7 天趋势、最近运行。
-
-function last7Days() {
-  var days = [];
-  var now = new Date();
-  for (var i = 6; i >= 0; i -= 1) {
-    var d = new Date(now.getTime() - i * 86400000);
-    days.push({ key: d.toISOString().slice(0, 10), label: (d.getMonth() + 1) + "/" + d.getDate() });
-  }
-  return days;
-}
+// 工作台 — 后端健康、今日实况、近 7 天趋势、平台分布、最近运行。
 
 function renderDashboard(ctx) {
   var api = ctx.api;
@@ -262,7 +255,7 @@ function renderDashboard(ctx) {
   var timer = null;
   var disposed = false;
 
-  // session
+  // 当前会话
   var sessionDot = h("span", { className: "sa-dot", "data-state": "idle" });
   var sessionMeta = h("span", { className: "sa-caption" }, "");
   root.appendChild(h("div", { className: "sa-platform" }, [
@@ -277,29 +270,30 @@ function renderDashboard(ctx) {
   applySession(ctx.sessionContext);
   if (events && typeof events.on === "function") {
     disposers.push(events.on("session-context", applySession));
-    disposers.push(events.on("agent-status", function (payload) { if (payload) applySession({ available: true, running: payload.running === true }); }));
+    disposers.push(events.on("agent-status", function (x) { if (x) applySession({ available: true, running: x.running === true }); }));
   }
 
-  // health + stats
+  // 健康
   var dot = h("span", { className: "sa-dot", "data-state": "idle" });
   var stateText = h("span", null, "检测中");
   var latency = h("span", { className: "sa-muted" }, "");
   var refreshBtn = h("button", { type: "button", className: "sa-btn", onClick: refresh }, "刷新");
   root.appendChild(h("div", { className: "sa-row" }, [dot, stateText, latency, refreshBtn]));
 
+  // 今日四个指标
   var cards = h("div", { className: "sa-cards" });
   function card(label) {
     var value = h("b", null, "-");
     cards.appendChild(h("div", { className: "sa-card" }, [value, h("span", { className: "sa-caption" }, label)]));
     return value;
   }
-  var cFlows = card("流程");
-  var cRuns = card("运行");
-  var cArtifacts = card("素材");
-  var cBindings = card("已登录平台");
+  var cTodayRuns = card("今日运行");
+  var cTodaySaved = card("今日新增素材");
+  var cFailRate = card("失败率");
+  var cScheduled = card("定时任务");
   root.appendChild(cards);
 
-  // chart
+  // 近 7 天
   root.appendChild(h("div", { className: "sa-section-title" }, "近 7 天"));
   root.appendChild(h("div", { className: "sa-legend" }, [
     h("span", null, [h("i", { style: { background: "var(--dsw-alias-brand-primary, #4f46e5)" } }), "发现"]),
@@ -308,32 +302,27 @@ function renderDashboard(ctx) {
   var chart = h("div", { className: "sa-chart" });
   root.appendChild(chart);
 
+  // 平台分布
+  root.appendChild(h("div", { className: "sa-section-title" }, "素材平台分布"));
+  var platformRow = h("div", { className: "sa-row" });
+  root.appendChild(platformRow);
+
   root.appendChild(h("div", { className: "sa-section-title" }, "最近运行"));
   var recent = h("div", { className: "sa-list" });
   root.appendChild(recent);
 
-  function renderChart(runs) {
+  function renderChart(days) {
     clear(chart);
-    var days = last7Days();
-    var byDay = {};
-    days.forEach(function (d) { byDay[d.key] = { found: 0, saved: 0 }; });
-    runs.forEach(function (r) {
-      var key = String(r.started_at || "").slice(0, 10);
-      if (!byDay[key]) return;
-      byDay[key].found += Number(r.found || 0);
-      byDay[key].saved += Number(r.saved || 0);
-    });
     var peak = 1;
-    days.forEach(function (d) { peak = Math.max(peak, byDay[d.key].found, byDay[d.key].saved); });
-    days.forEach(function (d) {
-      var data = byDay[d.key];
-      var bars = h("div", { className: "sa-row-inline", style: { alignItems: "flex-end", gap: "2px", height: "100%" } }, [
-        h("div", { className: "sa-chart-bar", style: { height: Math.round((data.found / peak) * 80) + "%" } }),
-        h("div", { className: "sa-chart-bar is-second", style: { height: Math.round((data.saved / peak) * 80) + "%" } })
-      ]);
+    (days || []).forEach(function (d) { peak = Math.max(peak, d.found, d.saved); });
+    (days || []).forEach(function (d) {
+      var label = d.day.slice(5).replace("-", "/");
       chart.appendChild(h("div", { className: "sa-chart-col" }, [
-        bars,
-        h("span", { className: "sa-chart-label" }, d.label)
+        h("div", { className: "sa-row-inline", style: { alignItems: "flex-end", gap: "2px", height: "100%" } }, [
+          h("div", { className: "sa-chart-bar", style: { height: Math.round((d.found / peak) * 80) + "%" } }),
+          h("div", { className: "sa-chart-bar is-second", style: { height: Math.round((d.saved / peak) * 80) + "%" } })
+        ]),
+        h("span", { className: "sa-chart-label" }, label)
       ]));
     });
   }
@@ -344,26 +333,35 @@ function renderDashboard(ctx) {
     api.health().then(function (res) {
       if (disposed) return;
       refreshBtn.disabled = false;
-      var data = res.ok && res.data ? res.data : null;
       dot.dataset.state = res.ok ? "online" : "offline";
       stateText.textContent = res.ok ? "后端在线" : "后端离线";
       latency.textContent = res.ok ? ((res.latencyMs || 0) + " ms") : (res.error || "");
-      var c = data && data.counts ? data.counts : {};
-      cFlows.textContent = String(c.flows === undefined ? "-" : c.flows);
-      cRuns.textContent = String(c.runs === undefined ? "-" : c.runs);
-      cArtifacts.textContent = String(c.artifacts === undefined ? "-" : c.artifacts);
-      cBindings.textContent = String(c.bindings === undefined ? "-" : c.bindings);
     });
-    api.runs(100).then(function (res) {
+    api.metrics().then(function (res) {
       if (disposed) return;
-      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
-      renderChart(items);
+      var m = res.ok && res.data ? res.data : null;
+      if (!m) return;
+      cTodayRuns.textContent = String(m.today.runs);
+      cTodaySaved.textContent = String(m.today.saved);
+      cFailRate.textContent = m.total.runs === 0 ? "—" : (m.total.failureRate + "%");
+      cScheduled.textContent = String(m.scheduled);
+      renderChart(m.days);
+      clear(platformRow);
+      if (!m.byPlatform || m.byPlatform.length === 0) {
+        platformRow.appendChild(h("span", { className: "sa-caption" }, "还没有素材。"));
+      } else {
+        m.byPlatform.forEach(function (x) { platformRow.appendChild(h("span", { className: "sa-chip" }, x.platform + " " + x.n)); });
+      }
+    });
+    api.runs(8).then(function (res) {
+      if (disposed) return;
       clear(recent);
-      if (items.length === 0) { recent.appendChild(h("div", { className: "sa-empty" }, "还没有运行记录 —— 到「流程」页建一条并运行。")); return; }
-      items.slice(0, 8).forEach(function (run) {
+      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
+      if (items.length === 0) { recent.appendChild(h("div", { className: "sa-empty" }, "还没有运行记录 —— 去「关键词采集」或「作品监控」建一条。")); return; }
+      items.forEach(function (run) {
         recent.appendChild(h("div", { className: "sa-row sa-list-row" }, [
           h("span", { className: "sa-dot", "data-state": run.state === "ok" ? "online" : (run.state === "failed" ? "offline" : "idle") }),
-          h("span", { style: { flex: 1 } }, run.flow_name || ("流程 " + run.flow_id)),
+          h("span", { style: { flex: 1 } }, run.flow_name || ("任务 " + run.flow_id)),
           h("span", { className: "sa-chip" }, "发现 " + run.found),
           h("span", { className: "sa-chip is-ok" }, "写入 " + run.saved),
           h("span", { className: "sa-caption" }, fmtTime(run.started_at))
@@ -376,10 +374,7 @@ function renderDashboard(ctx) {
   function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
   return {
     element: root, activate: activate, deactivate: deactivate,
-    dispose: function () {
-      disposed = true; deactivate();
-      while (disposers.length > 0) { try { disposers.pop()(); } catch (e) { /* gone */ } }
-    }
+    dispose: function () { disposed = true; deactivate(); while (disposers.length) { try { disposers.pop()(); } catch (e) {} } }
   };
 }
 
@@ -850,29 +845,34 @@ function renderAccountManager(ctx) {
 
 
 // ---- lib/panel/views/runs.js ----
-// 运行 — 时间线视图：每次运行展开成可视化的步骤。
+// 任务队列 — 采集 / 下载 / 发布 的待处理与历史，汇到一处。
 
-var STAGE_LABEL = { source: "取内容", filter: "筛选", action: "执行" };
+var KIND = { run: "采集", plan: "发布", download: "下载" };
+var STATE = { ok: "成功", failed: "失败", running: "运行中", draft: "待复核", approved: "已批准", prepared: "已准备", done: "已下载" };
 
 function renderRuns(ctx) {
   var api = ctx.api;
   var root = h("div", { className: "sa-view" });
   var timer = null;
   var disposed = false;
-  var list = h("div", { className: "sa-list" });
   var expanded = null;
 
-  root.appendChild(h("div", { className: "sa-section-title" }, "运行历史"));
+  var summary = h("div", { className: "sa-row" });
+  var list = h("div", { className: "sa-list" });
+  root.appendChild(h("div", { className: "sa-section-title" }, "任务队列"));
+  root.appendChild(summary);
   root.appendChild(list);
+
+  function stepDot(state) { return state === "ok" ? " is-ok" : (state === "failed" ? " is-bad" : ""); }
 
   function stepsFor(run) {
     var box = h("div", { className: "sa-steps" });
     (run.steps || []).forEach(function (step) {
       box.appendChild(h("div", { className: "sa-step" }, [
-        h("span", { className: "sa-step-dot" + (step.state === "ok" ? " is-ok" : " is-bad") }),
+        h("span", { className: "sa-step-dot" + stepDot(step.state) }),
         h("div", { className: "sa-step-main" }, [
-          h("div", { className: "sa-step-title" }, (STAGE_LABEL[step.stage] || step.stage) + " · " + step.capability),
-          h("div", { className: "sa-caption" }, "进入 " + step.in_count + " 条 → 产出 " + step.out_count + " 条" + (step.detail ? " · " + step.detail : "")),
+          h("div", { className: "sa-step-title" }, step.stage + " · " + step.capability),
+          h("div", { className: "sa-caption" }, "进入 " + step.in_count + " → 产出 " + step.out_count + (step.detail ? " · " + step.detail : "")),
           step.error ? h("div", { className: "sa-warn" }, step.error) : null
         ])
       ]));
@@ -880,43 +880,45 @@ function renderRuns(ctx) {
     return box;
   }
 
-  async function toggle(id, card) {
-    if (expanded === id) { expanded = null; refresh(); return; }
+  async function toggle(kind, id, holder) {
+    if (kind !== "run") return;
+    if (expanded === id) { expanded = null; clear(holder); return; }
     expanded = id;
     var res = await api.run(id);
-    var holder = card.querySelector("[data-detail]");
-    if (holder && res.ok && res.data) { clear(holder); holder.appendChild(stepsFor(res.data)); }
+    clear(holder);
+    if (res.ok && res.data) holder.appendChild(stepsFor(res.data));
   }
 
   function refresh() {
     if (disposed) return;
-    api.runs(30).then(function (res) {
+    api.queue().then(function (res) {
       if (disposed) return;
       clear(list);
-      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
-      if (items.length === 0) { list.appendChild(h("div", { className: "sa-empty" }, "还没有运行记录。")); return; }
-      items.forEach(function (run) {
+      clear(summary);
+      if (!res.ok || !res.data) { list.appendChild(h("div", { className: "sa-empty" }, "读取失败：" + (res.error || res.status))); return; }
+      var s = res.data.summary || {};
+      summary.appendChild(h("span", { className: "sa-chip" }, "运行 " + (s.runs || 0)));
+      summary.appendChild(h("span", { className: "sa-chip" + (s.failed ? " is-bad" : "") }, "失败 " + (s.failed || 0)));
+      summary.appendChild(h("span", { className: "sa-chip" }, "待发布 " + (s.pendingPlans || 0)));
+      summary.appendChild(h("span", { className: "sa-chip is-ok" }, "已下载 " + (s.downloads || 0)));
+      var items = Array.isArray(res.data.items) ? res.data.items : [];
+      if (items.length === 0) { list.appendChild(h("div", { className: "sa-empty" }, "队列为空。")); return; }
+      items.slice(0, 60).forEach(function (item) {
         var detail = h("div", { "data-detail": "" });
-        var card = h("div", { className: "sa-platform" }, [
-          h("div", { className: "sa-platform-head" }, [
-            h("span", { className: "sa-dot", "data-state": run.state === "ok" ? "online" : (run.state === "failed" ? "offline" : "idle") }),
-            h("span", { className: "sa-platform-name" }, "#" + run.id + " " + (run.flow_name || "")),
-            h("span", { className: "sa-chip" }, "发现 " + run.found),
-            h("span", { className: "sa-chip is-ok" }, "写入 " + run.saved),
-            h("span", { className: "sa-caption" }, fmtTime(run.started_at)),
-            h("button", { type: "button", className: "sa-btn", onClick: function () { toggle(run.id, card); } }, expanded === run.id ? "收起" : "查看步骤")
+        var row = h("div", { className: "sa-list-row" }, [
+          h("div", { className: "sa-row" }, [
+            h("span", { className: "sa-dot", "data-state": item.state === "ok" || item.state === "done" ? "online" : (item.state === "failed" ? "offline" : "idle") }),
+            h("span", { className: "sa-chip" }, KIND[item.kind] || item.kind),
+            h("span", { style: { flex: 1, fontWeight: 600 } }, item.title),
+            h("span", { className: "sa-state" }, STATE[item.state] || item.state),
+            h("span", { className: "sa-caption" }, fmtTime(item.at)),
+            item.kind === "run" ? h("button", { type: "button", className: "sa-btn", onClick: function () { toggle(item.kind, item.id, detail); } }, expanded === item.id ? "收起" : "轨迹") : null
           ]),
-          run.error ? h("div", { className: "sa-warn" }, run.error) : null,
+          h("div", { className: "sa-caption", style: { wordBreak: "break-all" } }, item.detail || ""),
+          item.error ? h("div", { className: "sa-warn" }, item.error) : null,
           detail
         ]);
-        list.appendChild(card);
-        if (expanded === run.id) {
-          api.run(run.id).then(function (full) {
-            if (disposed || !full.ok || !full.data) return;
-            clear(detail);
-            detail.appendChild(stepsFor(full.data));
-          });
-        }
+        list.appendChild(row);
       });
     });
   }
@@ -1008,36 +1010,68 @@ function renderAutoComment(ctx) {
 
 
 // ---- lib/panel/views/downloads.js ----
-// 链接下载 — 已下载到本地的素材文件。
+// 链接下载 — 粘贴链接直接下载；下方是已下载到本地的文件。
 
 function renderDownloads(ctx) {
   var api = ctx.api;
   var root = h("div", { className: "sa-view" });
   var timer = null;
   var disposed = false;
+
+  var input = h("textarea", { className: "sa-textarea", style: { minHeight: "80px" }, placeholder: "粘贴作品链接，一行一个。例如：\nhttps://www.douyin.com/video/7607954764765226633" });
+  var perItem = h("input", { className: "sa-input", type: "number", value: "1", min: "1", style: { width: "80px" } });
+  var btn = h("button", { type: "button", className: "sa-btn", "data-variant": "primary", onClick: start }, "开始下载");
   var status = h("div", { className: "sa-caption" }, "");
   var list = h("div", { className: "sa-list" });
 
   root.appendChild(h("div", { className: "sa-section-title" }, "链接下载"));
-  root.appendChild(h("div", { className: "sa-muted" }, "流程里勾选「下载媒体文件」后，文件会落在这里。按链接下载（粘贴链接直接下载）尚未接入。"));
+  root.appendChild(h("div", { className: "sa-muted" }, "粘贴作品链接，RelayDeck 会打开页面取出媒体地址并下载到本地。不依赖登录。"));
+  root.appendChild(input);
+  root.appendChild(h("div", { className: "sa-row" }, [h("span", { className: "sa-caption" }, "每个作品下载"), perItem, h("span", { className: "sa-caption" }, "个文件"), btn]));
   root.appendChild(status);
+  root.appendChild(h("div", { className: "sa-section-title" }, "已下载文件"));
   root.appendChild(list);
 
-  function refresh() {
+  async function start() {
+    var urls = input.value.trim();
+    if (!urls) { status.textContent = "请先粘贴链接"; return; }
+    btn.disabled = true;
+    status.textContent = "正在解析并下载（会打开浏览器窗口，请稍候）…";
+    try {
+      var res = await api.downloadUrls(urls, Number(perItem.value) || 1);
+      var d = res.ok && res.data ? res.data : null;
+      if (!d) { status.textContent = "失败：" + (res.error || res.status); return; }
+      if (d.error) { status.textContent = "失败：" + d.error; return; }
+      var parts = ["解析 " + d.resolved + " 个作品", "下载 " + d.downloaded + " 个文件", d.sizeText];
+      if (d.failures && d.failures.length) parts.push("跳过 " + d.failures.length + " 个");
+      status.textContent = parts.join(" · ");
+      if (d.failures && d.failures.length) {
+        var warn = h("div", { className: "sa-warn" }, d.failures.map(function (f) { return f.url + "：" + f.reason; }).join("；"));
+        root.insertBefore(warn, list);
+      }
+      input.value = "";
+      load();
+    } finally { btn.disabled = false; }
+  }
+
+  function load() {
     if (disposed) return;
     api.artifacts(300).then(function (res) {
       if (disposed) return;
       clear(list);
       var all = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
       var items = all.filter(function (a) { return a.local_path && a.local_path.length > 0; });
-      status.textContent = "已下载 " + items.length + " 项 · 素材库共 " + all.length + " 项";
       if (items.length === 0) { list.appendChild(h("div", { className: "sa-empty" }, "还没有下载任何文件。")); return; }
       items.forEach(function (row) {
+        var size = "";
+        try { var stats = JSON.parse(row.stats_json || "{}"); if (stats.duration) size = stats.duration + " 秒"; } catch (e) {}
         list.appendChild(h("div", { className: "sa-list-row" }, [
           h("div", { className: "sa-row" }, [
             h("span", { className: "sa-chip is-ok" }, "已下载"),
             h("span", { style: { flex: 1, fontWeight: 600 } }, row.title || row.item_id),
-            h("span", { className: "sa-caption" }, row.platform + " · " + fmtTime(row.collected_at))
+            size ? h("span", { className: "sa-caption" }, size) : null,
+            h("span", { className: "sa-caption" }, fmtTime(row.collected_at)),
+            h("button", { type: "button", className: "sa-btn", onClick: function () { api.areaDelete("artifacts", row.id).then(load); } }, "移除记录")
           ]),
           h("div", { className: "sa-caption", style: { wordBreak: "break-all" } }, row.local_path)
         ]));
@@ -1045,7 +1079,7 @@ function renderDownloads(ctx) {
     });
   }
 
-  function activate() { if (disposed || timer !== null) return; refresh(); timer = setInterval(refresh, 10000); }
+  function activate() { if (disposed || timer !== null) return; load(); timer = setInterval(load, 10000); }
   function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
   return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
 }
