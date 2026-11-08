@@ -26,6 +26,13 @@ for (const [name, check] of [
   assert(check(res.data), name + " returns the documented shape");
 }
 
+heading("relaydeck_status");
+const statusResult = await tools.get("relaydeck_status").execute({}, {});
+console.log(JSON.stringify(statusResult));
+assert(statusResult.running === true, "status reports running");
+assert(typeof statusResult.latencyMs === "number", "status reports a latency");
+assert(Object.values(statusResult).every((v) => v !== undefined), "tool output has no undefined values (lossless JSON)");
+
 heading("platforms");
 const plats = await fetch("http://127.0.0.1:" + PORT + "/api/platforms", { signal: AbortSignal.timeout(5000) }).then((r) => r.json());
 const ids = plats.items.map((p) => p.id).sort();
