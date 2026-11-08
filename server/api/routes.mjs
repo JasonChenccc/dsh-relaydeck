@@ -5,7 +5,7 @@ import { list as listCapabilities } from "../capabilities/index.mjs";
 import { executeFlow, readRun, readFlow, validateSpec } from "../flow.mjs";
 import { errorText } from "../log.mjs";
 import { platform, platformIds } from "../platforms.mjs";
-import { startLogin, pollLogin, cancelLogin, listLogins, qrImage } from "../browser/login.mjs";
+import { startLogin, pollLogin, cancelLogin, listLogins, qrImage, verifyBindings } from "../browser/login.mjs";
 import { schedulerState, startScheduler, stopScheduler, nextRunAt } from "../scheduler.mjs";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
@@ -197,7 +197,10 @@ export function createRouter({ db, version, startedAt, dataDir, runFlowById, sch
     return { payload: { purged: true, keepBindings } };
   });
 
-  on("GET", "/api/bindings", () => ({ items: db.prepare("SELECT id, platform, label, nickname, state, proxy, last_used_at, created_at FROM bindings ORDER BY id DESC").all() }));
+  on("GET", "/api/bindings", () => ({ items: db.prepare("SELECT id, platform, label, nickname, platform_uid, state, proxy, last_used_at, created_at FROM bindings ORDER BY platform, id").all() }));
+
+  // Re-read each platform and reconcile: drops unverified rows, names real ones.
+  on("POST", "/api/bindings/verify", async () => ({ payload: { results: await verifyBindings(db) } }));
 
   return async function handle(req, res) {
     const url = new URL(req.url || "/", "http://127.0.0.1");

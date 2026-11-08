@@ -5,8 +5,9 @@
 // RelayDeck only observes: it waits for those cookies, then records a binding.
 // The browser profile lives on disk, so the session survives restarts.
 import { ensureBrowser } from "./session.mjs";
+import { PLATFORMS } from "../platforms.mjs";
 import { openPage } from "./cdp.mjs";
-import { platform } from "../platforms.mjs";
+import { platform, loginProbe } from "../platforms.mjs";
 import { nowIso } from "../db.mjs";
 import { log, errorText } from "../log.mjs";
 
@@ -27,6 +28,7 @@ function sessionView(session) {
     url: session.url,
     hint: session.hint,
     matched: session.matched || [],
+    account: session.account || undefined,
     bindingId: session.bindingId,
     error: session.error
   };
@@ -62,16 +64,20 @@ export async function startLogin(db, platformId, options = {}) {
   return sessionView(session);
 }
 
-function saveBinding(db, p, cookies) {
-  const secret = JSON.stringify(cookies.map((c) => ({ name: c.name, value: c.value, domain: c.domain, path: c.path, expires: c.expires })));
-  const existing = db.prepare("SELECT id FROM bindings WHERE platform = ? AND platform_uid = ?").get(p.id, "default");
+function saveBinding(db, p, cookies, account) {
+  const secret = JSON.stringify(cookies
+    .filter((c) => /session|sid|uid|passport|web_session|slave/i.test(c.name))
+    .map((c) => ({ name: c.name, value: c.value, domain: c.domain, path: c.path, expires: c.expires })));
+  const uid = String(account.uid);
+  const existing = db.prepare("SELECT id FROM bindings WHERE platform = ? AND platform_uid = ?").get(p.id, uid);
   if (existing) {
-    db.prepare("UPDATE bindings SET state = 'active', secret_json = ?, last_used_at = ? WHERE id = ?").run(secret, nowIso(), existing.id);
+    db.prepare("UPDATE bindings SET state = 'active', nickname = ?, label = ?, secret_json = ?, last_used_at = ? WHERE id = ?")
+      .run(account.nickname || "", p.title, secret, nowIso(), existing.id);
     return existing.id;
   }
   const info = db.prepare(
     "INSERT INTO bindings (platform, label, platform_uid, nickname, state, secret_json, created_at) VALUES (?, ?, ?, ?, 'active', ?, ?)"
-  ).run(p.id, p.title, "default", "", secret, nowIso());
+  ).run(p.title, p.title, uid, account.nickname || "", secret, nowIso());
   return Number(info.lastInsertRowid);
 }
 
@@ -82,14 +88,16 @@ export async function pollLogin(db, id) {
   if (session.state !== "waiting") return sessionView(session);
   const p = platform(session.platform);
   try {
-    const cookies = await session.page.cookies();
-    const matched = p.sessionCookies.filter((name) => cookies.some((c) => c.name === name && c.value));
-    session.matched = matched;
-    if (matched.length > 0) {
-      session.bindingId = saveBinding(db, p, cookies);
+    const probe = loginProbe(session.platform);
+    const account = probe ? await session.page.evaluate(probe).catch(() => null) : null;
+    session.account = account || null;
+    if (account && account.uid) {
+      const cookies = await session.page.cookies();
+      session.bindingId = saveBinding(db, p, cookies, account);
       session.state = "ok";
+      session.matched = [account.nickname || account.uid];
       try { await session.page.close(); } catch (e) { /* keep the profile */ }
-      log("info", "login captured", { platform: p.id, cookies: cookies.length, matched });
+      log("info", "login captured", { platform: p.id, uid: account.uid, nickname: account.nickname });
     }
     return sessionView(session);
   } catch (error) {
@@ -103,6 +111,20 @@ export async function pollLogin(db, id) {
  * Screenshot just the QR code region so the panel can show it inline instead of
  * opening a browser window.
  */
+/**
+ * The page's user store fills in only after its SPA hydrates, so a single read
+ * right after navigation is a false "signed out". Poll until it appears.
+ */
+async function waitForAccount(page, probe, timeoutMs) {
+  const deadline = Date.now() + (timeoutMs || 15000);
+  while (Date.now() < deadline) {
+    const account = await page.evaluate(probe).catch(() => null);
+    if (account && account.uid) return account;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  return null;
+}
+
 export async function qrImage(id) {
   const session = sessions.get(id);
   if (!session) return { found: false, reason: "unknown login" };
@@ -152,6 +174,41 @@ export async function cancelLogin(id) {
   try { await session.page.close(); } catch (e) { /* gone */ }
   session.state = "cancelled";
   return { cancelled: true };
+}
+
+/**
+ * Re-read every platform's own page state and reconcile the stored bindings.
+ *
+ * This is the repair path for bindings recorded before the account probe existed:
+ * a platform with no signed-in account loses its binding, a signed-in one gains
+ * the real uid and nickname, and a second account on the same platform becomes a
+ * separate row instead of overwriting the first.
+ */
+export async function verifyBindings(db) {
+  const { cdp } = await ensureBrowser({ headless: false });
+  const results = [];
+  for (const p of PLATFORMS) {
+    const probe = loginProbe(p.id);
+    if (!probe) { results.push({ platform: p.id, state: "no-probe" }); continue; }
+    let page = null;
+    try {
+      page = await openPage(cdp, p.home);
+      const account = await waitForAccount(page, probe, 18000);
+      if (account && account.uid) {
+        const cookies = await page.cookies();
+        const id = saveBinding(db, p, cookies, account);
+        results.push({ platform: p.id, state: "active", uid: account.uid, nickname: account.nickname, bindingId: id });
+      } else {
+        const removed = db.prepare("DELETE FROM bindings WHERE platform = ?").run(p.id);
+        results.push({ platform: p.id, state: "signed-out", removed: removed.changes });
+      }
+    } catch (error) {
+      results.push({ platform: p.id, state: "error", error: errorText(error) });
+    } finally {
+      if (page) { try { await page.close(); } catch (e) { /* gone */ } }
+    }
+  }
+  return results;
 }
 
 export function listLogins() {

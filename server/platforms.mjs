@@ -107,6 +107,25 @@ export function publishPlanFor(id) {
   return PUBLISH[id];
 }
 
+/**
+ * How to read the signed-in user from each platform's own page state.
+ *
+ * Cookie presence alone is NOT proof of a login: these sites set device and CSRF
+ * cookies on first visit. Every probe therefore resolves to a real account
+ * object (or null), and only a non-empty uid counts as signed in.
+ */
+export const LOGIN_PROBE = {
+  douyin: "(() => { const s = window.userInfoStore && window.userInfoStore.curLoginUserInfo; return s && s.uid ? { uid: String(s.uid), nickname: s.nickname || '', shortId: s.shortId || '', avatar: s.avatarUrl || '', signature: s.desc || '' } : null; })()",
+  xhs: "(() => { const s = window.__INITIAL_STATE__; const u = s && (s.user || (s.userStore && s.userStore.userInfo)); const info = u && (u.userPageData && u.userPageData.basicInfo || u.basicInfo || u); return info && (info.userId || info.user_id) ? { uid: String(info.userId || info.user_id), nickname: info.nickname || info.nickName || '', avatar: info.image || info.avatar || '' } : null; })()",
+  kuaishou: "(() => { const s = window.__APOLLO_STATE__ || window.__INITIAL_STATE__; const u = s && (s.userInfo || s.user || (s.defaultClient && s.defaultClient.userInfo)); return u && (u.userId || u.user_id || u.id) ? { uid: String(u.userId || u.user_id || u.id), nickname: u.userName || u.name || u.nickname || '', avatar: u.headUrl || u.avatar || '' } : null; })()",
+  shipinhao: "(() => { const s = window.__INITIAL_STATE__ || window.__PRELOADED_STATE__; const u = s && (s.userInfo || s.user || s.account); return u && (u.uid || u.userId) ? { uid: String(u.uid || u.userId), nickname: u.nickname || u.name || '', avatar: u.avatar || '' } : null; })()",
+  tiktok: "(() => { const d = window.__UNIVERSAL_DATA_FOR_REHYDRATION__; const scope = d && d.__DEFAULT_SCOPE__; const u = scope && (scope['webapp.user-detail'] && scope['webapp.user-detail'].userInfo); const info = u && (u.user || u); return info && (info.id || info.uid) ? { uid: String(info.id || info.uid), nickname: info.nickname || info.uniqueId || '', avatar: info.avatarLarger || info.avatarThumb || '' } : null; })()"
+};
+
+export function loginProbe(id) {
+  return LOGIN_PROBE[id];
+}
+
 export function platform(id) {
   return PLATFORMS.find((p) => p.id === id);
 }
