@@ -1,10 +1,11 @@
 // Host routes: the panel's same-origin config + proxy surface.
-import { makeContext, assert, heading, loadPlugin } from "./harness.mjs";
+import { makeContext, assert, heading, loadPlugin, tempDataDir, removeDataDir } from "./harness.mjs";
 
 const PORT = 18736;
 const plugin = await loadPlugin();
 const { ctx, tools, routes, dispose } = makeContext();
-const cfg = plugin.Config["~standard"].validate({ port: PORT, autostart: false, devMode: true }).value;
+const dataDir = tempDataDir("config-bridge");
+const cfg = plugin.Config["~standard"].validate({ port: PORT, autostart: false, devMode: true, dataDir }).value;
 plugin.apply(ctx, cfg);
 
 heading("registered routes");
@@ -61,4 +62,5 @@ assert(caps.statusCode === 200 && caps.body.includes("core.store"), "proxy forwa
 
 await tools.get("relaydeck_stop").execute({}, {});
 await dispose();
+removeDataDir(dataDir);
 console.log("\nCONFIG-BRIDGE " + (process.exitCode ? "FAIL" : "PASS"));

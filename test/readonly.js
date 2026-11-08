@@ -1,10 +1,11 @@
 // Read-only tools against the real backend.
-import { makeContext, assert, heading, loadPlugin } from "./harness.mjs";
+import { makeContext, assert, heading, loadPlugin, tempDataDir, removeDataDir } from "./harness.mjs";
 
 const PORT = 18734;
 const plugin = await loadPlugin();
 const { ctx, tools, dispose } = makeContext();
-const cfg = plugin.Config["~standard"].validate({ port: PORT, autostart: false }).value;
+const dataDir = tempDataDir("readonly");
+const cfg = plugin.Config["~standard"].validate({ port: PORT, autostart: false, dataDir }).value;
 plugin.apply(ctx, cfg);
 
 heading("start backend");
@@ -43,4 +44,5 @@ assert(stages.has("source") && stages.has("filter") && stages.has("action"), "al
 
 await tools.get("relaydeck_stop").execute({}, {});
 await dispose();
+removeDataDir(dataDir);
 console.log("\nREADONLY " + (process.exitCode ? "FAIL" : "PASS"));

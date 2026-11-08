@@ -1,10 +1,11 @@
 // Lifecycle: the plugin starts and stops ITS OWN backend through ctx.subprocess.
-import { makeContext, assert, heading, loadPlugin } from "./harness.mjs";
+import { makeContext, assert, heading, loadPlugin, tempDataDir, removeDataDir } from "./harness.mjs";
 
 const PORT = 18733;
 const plugin = await loadPlugin();
 const { ctx, tools, dispose } = makeContext();
-const cfg = plugin.Config["~standard"].validate({ port: PORT, autostart: false }).value;
+const dataDir = tempDataDir("lifecycle");
+const cfg = plugin.Config["~standard"].validate({ port: PORT, autostart: false, dataDir }).value;
 plugin.apply(ctx, cfg);
 
 const start = tools.get("relaydeck_start");
@@ -40,4 +41,5 @@ console.log(JSON.stringify(down));
 assert(down.running === false, "status reports not running after stop");
 
 await dispose();
+removeDataDir(dataDir);
 console.log("\nLIFECYCLE " + (process.exitCode ? "FAIL" : "PASS"));

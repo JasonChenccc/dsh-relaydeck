@@ -8,9 +8,12 @@ import { fileURLToPath } from "node:url";
 import { openDatabase, nowIso } from "./db.mjs";
 import { log, errorText } from "./log.mjs";
 import { createRouter } from "./api/routes.mjs";
+import { executeFlow, readFlow } from "./flow.mjs";
+import { startScheduler, stopScheduler } from "./scheduler.mjs";
 import "./capabilities/core.mjs";
 import "./actions/download.mjs";
 import "./capabilities/websearch.mjs";
+import "./capabilities/publish.mjs";
 import { closeAllLogins } from "./browser/login.mjs";
 
 const VERSION = "0.1.0";
@@ -27,7 +30,15 @@ const host = "127.0.0.1";
 const startedAt = Date.now();
 
 const db = openDatabase(join(dataDir, "relaydeck.db"));
-const handle = createRouter({ db, version: VERSION, startedAt, dataDir });
+/** Run a flow row by id — shared by the scheduler and the retry route. */
+async function runFlowById(flowRow, trigger) {
+  const flow = readFlow(db, flowRow.id);
+  if (!flow) return null;
+  return executeFlow({ db, spec: flow.spec, flow, trigger: trigger || "schedule", dataDir });
+}
+
+const schedulerTickMs = Number(arg("tick", "30000"));
+const handle = createRouter({ db, version: VERSION, startedAt, dataDir, runFlowById, schedulerTickMs });
 
 const server = createServer((req, res) => {
   handle(req, res).catch((error) => {
@@ -40,10 +51,14 @@ const server = createServer((req, res) => {
 
 server.listen(port, host, () => {
   log("info", "relaydeck backend ready", { url: "http://" + host + ":" + port, dataDir, version: VERSION, at: nowIso() });
+  if (arg("schedule", "1") !== "0") {
+    startScheduler({ db, runFlow: runFlowById, tickMs: schedulerTickMs });
+  }
 });
 
 function shutdown(signal) {
   log("info", "shutting down", { signal });
+  stopScheduler();
   void closeAllLogins().catch(() => {});
   server.close(() => { try { db.close(); } catch (e) {} process.exit(0); });
   setTimeout(() => process.exit(0), 2000).unref();

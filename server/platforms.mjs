@@ -65,6 +65,48 @@ export function searchPlan(id, query) {
   return { url: plan.url(query), match: plan.match };
 }
 
+/**
+ * Where each platform publishes, plus the fields RelayDeck tries to fill.
+ * Selectors are best-effort hints: when one misses, the draft is still prepared
+ * and left open for the human to finish. Final submission is never automated.
+ */
+export const PUBLISH = {
+  douyin: {
+    url: "https://creator.douyin.com/creator-micro/content/upload",
+    fileInput: 'input[type="file"]',
+    title: 'input[placeholder*="标题"], input[placeholder*="作品"]',
+    body: 'div[contenteditable="true"], textarea[placeholder*="作品描述"]'
+  },
+  xhs: {
+    url: "https://creator.xiaohongshu.com/publish/publish",
+    fileInput: 'input[type="file"]',
+    title: 'input[placeholder*="标题"]',
+    body: 'div[contenteditable="true"], textarea[placeholder*="正文"]'
+  },
+  kuaishou: {
+    url: "https://cp.kuaishou.com/article/publish/video",
+    fileInput: 'input[type="file"]',
+    title: 'input[placeholder*="标题"]',
+    body: 'div[contenteditable="true"], textarea[placeholder*="描述"]'
+  },
+  shipinhao: {
+    url: "https://channels.weixin.qq.com/platform/post/create",
+    fileInput: 'input[type="file"]',
+    title: 'input[placeholder*="标题"]',
+    body: 'div[contenteditable="true"], textarea[placeholder*="描述"]'
+  },
+  tiktok: {
+    url: "https://www.tiktok.com/tiktokstudio/upload",
+    fileInput: 'input[type="file"]',
+    title: 'input[placeholder*="title"], input[placeholder*="Title"]',
+    body: 'div[contenteditable="true"]'
+  }
+};
+
+export function publishPlanFor(id) {
+  return PUBLISH[id];
+}
+
 export function platform(id) {
   return PLATFORMS.find((p) => p.id === id);
 }

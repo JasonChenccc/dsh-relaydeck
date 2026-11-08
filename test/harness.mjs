@@ -4,6 +4,9 @@
 // These tests run the REAL backend and the REAL plugin code; only the Cordis
 // context is faked, plus a subprocess stub that mirrors
 // @deepseek-ai/dsh-subprocess ({ done, collected, terminate, waitForExit }).
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { registerHooks } from "node:module";
 import { spawn } from "node:child_process";
 
@@ -17,6 +20,16 @@ registerHooks({
 });
 
 export { spawn };
+
+/** Every test that starts the backend gets its own database, so runs never
+ *  accumulate state across test files or across repeated runs. */
+export function tempDataDir(label) {
+  return mkdtempSync(join(tmpdir(), "relaydeck-" + (label || "test") + "-"));
+}
+
+export function removeDataDir(path) {
+  try { rmSync(path, { recursive: true, force: true }); } catch (e) { /* windows lock */ }
+}
 
 export function makeSubprocess() {
   return {

@@ -6,6 +6,7 @@ import { executeFlow, readRun, readFlow, validateSpec } from "../flow.mjs";
 import { errorText } from "../log.mjs";
 import { platform, platformIds } from "../platforms.mjs";
 import { startLogin, pollLogin, cancelLogin, listLogins } from "../browser/login.mjs";
+import { schedulerState, startScheduler, stopScheduler, nextRunAt } from "../scheduler.mjs";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 
@@ -38,7 +39,7 @@ function match(pattern, parts) {
   return params;
 }
 
-export function createRouter({ db, version, startedAt, dataDir }) {
+export function createRouter({ db, version, startedAt, dataDir, runFlowById, schedulerTickMs }) {
   const routes = [];
   const on = (method, pattern, handler) => routes.push({ method, parts: pattern.split("/").filter(Boolean), handler });
 
@@ -98,6 +99,57 @@ export function createRouter({ db, version, startedAt, dataDir }) {
     const url = new URL(req.url, "http://127.0.0.1");
     const limit = Math.min(Number(url.searchParams.get("limit") || 50), 200);
     return { items: db.prepare("SELECT * FROM runs ORDER BY id DESC LIMIT ?").all(limit) };
+  });
+
+  // ── retry / replay ──
+  on("POST", "/api/runs/:id/retry", async (params) => {
+    const previous = db.prepare("SELECT * FROM runs WHERE id = ?").get(Number(params.id));
+    if (!previous) return { statusCode: 404, payload: { error: "run not found" } };
+    if (previous.flow_id === null || previous.flow_id === undefined) {
+      return { statusCode: 400, payload: { error: "this run has no flow to replay" } };
+    }
+    const flow = readFlow(db, previous.flow_id);
+    if (!flow) return { statusCode: 404, payload: { error: "flow no longer exists" } };
+    const run = await executeFlow({ db, spec: flow.spec, flow, trigger: "retry", dataDir });
+    return { payload: run };
+  });
+
+  // ── scheduler ──
+  on("GET", "/api/scheduler", () => {
+    const state = schedulerState();
+    const flows = db.prepare("SELECT id, name, trigger, cron, enabled, last_run_at FROM flows WHERE trigger != 'manual'").all();
+    return {
+      ...state,
+      monitored: flows.map((flow) => ({
+        id: flow.id, name: flow.name, trigger: flow.trigger, cron: flow.cron,
+        enabled: flow.enabled === 1,
+        nextRunAt: flow.enabled === 1 && nextRunAt(flow) ? nextRunAt(flow).toISOString() : null
+      }))
+    };
+  });
+
+  on("POST", "/api/scheduler/start", () => startScheduler({ db, runFlow: runFlowById, tickMs: schedulerTickMs }));
+  on("POST", "/api/scheduler/stop", () => stopScheduler());
+
+  // ── publish plans ──
+  on("GET", "/api/publish-plans", (params, req) => {
+    const url = new URL(req.url, "http://127.0.0.1");
+    const limit = Math.min(Number(url.searchParams.get("limit") || 100), 500);
+    const platform = url.searchParams.get("platform");
+    const rows = platform
+      ? db.prepare("SELECT * FROM publish_plans WHERE platform = ? ORDER BY id DESC LIMIT ?").all(platform, limit)
+      : db.prepare("SELECT * FROM publish_plans ORDER BY id DESC LIMIT ?").all(limit);
+    return { items: rows.map((row) => { let files = []; try { files = JSON.parse(row.files_json); } catch (e) {} return { ...row, files }; }) };
+  });
+
+  on("POST", "/api/publish-plans/:id", async (params, req) => {
+    const body = await readJson(req);
+    const status = String(body.status || "");
+    if (!["draft", "approved", "discarded"].includes(status)) {
+      return { statusCode: 400, payload: { error: "status must be draft | approved | discarded" } };
+    }
+    const info = db.prepare("UPDATE publish_plans SET status = ?, updated_at = ? WHERE id = ?").run(status, nowIso(), Number(params.id));
+    return { payload: { updated: info.changes > 0, status } };
   });
 
   on("GET", "/api/runs/:id", (params) => {

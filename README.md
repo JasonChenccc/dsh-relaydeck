@@ -77,6 +77,17 @@ The panel runs on the DSH origin, so it reaches the backend through the same-ori
 | 看板 Dashboard | Backend health, flow/run/artifact counts, most recent runs, current DSH session |
 | 流程 Flows | Flow list, run/delete, create from a spec |
 | 运行 Runs | Run history; click a run to see its step-by-step trace |
+### Relay chain
+
+``
+<platform>.search  →  core.stat / core.contains / core.limit / core.dedupe
+                  →  core.store  →  core.download
+                  →  core.publishPlan  →  <platform>.prepareDraft
+```
+
+The last step stops short of clicking publish: it attaches media and fills the
+fields in the platform\u2019s own creator UI, then leaves the window open for a human
+to review and submit.
 | 素材 Library | Artifacts produced by runs |
 | 账号 Accounts | QR login per platform + recorded bindings |
 | 能力 Capabilities | Every registered capability, grouped by stage |
@@ -91,7 +102,7 @@ All tools are namespaced `relaydeck_*`.
 
 **Read** — `relaydeck_ping`, `relaydeck_config_get`, `relaydeck_status`, `relaydeck_capabilities`, `relaydeck_flow_list`, `relaydeck_run_list`, `relaydeck_run_get`, `relaydeck_artifact_list`, `relaydeck_binding_list`, `relaydeck_platform_list`, `relaydeck_login_list`
 
-**Write** — `relaydeck_start`, `relaydeck_stop`, `relaydeck_flow_create`, `relaydeck_flow_run`, `relaydeck_flow_delete`, `relaydeck_login_start`, `relaydeck_login_status`
+**Write** — `relaydeck_start`, `relaydeck_stop`, `relaydeck_flow_create`, `relaydeck_flow_run`, `relaydeck_flow_delete`, `relaydeck_run_retry`, `relaydeck_login_start`, `relaydeck_login_status`, `relaydeck_plan_review`
 
 ---
 
@@ -145,9 +156,10 @@ set ELECTRON_RUN_AS_NODE=1 && "D:\dsh\DeepSeek Harness.exe" test/smoke.js
 | **M0** skeleton: backend, schema, flow engine, lifecycle, panel | ✅ done |
 | **M1** browser channel + QR login + first platform capability | ✅ done |
 | **M2** flow scheduling, retry, replay | ⏳ |
-| **M3** cross-platform relay (collect on one platform, publish to another) | ⏳ next |
-| **M2** all five platform search capabilities (one generic engine + descriptors) | ✅ done |
-| **M5** more platforms | ⏳ |
+| **M3** cross-platform relay: search → filter → store → download → publish plan → prepare draft | ✅ done |
+| **M2** all five platform search capabilities | ✅ done |
+| **M4** scheduler (interval + cron), retry / replay | ✅ done |
+| **M5** per-platform response/selector tuning against live sessions | ⏳ needs your account |
 
 ---
 

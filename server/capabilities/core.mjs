@@ -130,6 +130,41 @@ registerAll([
     async run({ params, items }) {
       return { detail: "通知：" + String(params.message || "") + "（" + items.length + " 条）" };
     }
+  },
+  {
+    id: "core.publishPlan",
+    platform: "core",
+    stage: "action",
+    title: "生成发布计划",
+    description: "把条目整理成待发布的草稿计划（标题/正文/标签/文件），供人工复核后再交给平台能力发布。",
+    params: {
+      target: "目标平台 id（douyin / xhs / kuaishou / shipinhao / tiktok）",
+      titleTemplate: "标题模板，支持 {title} / {author}",
+      bodyTemplate: "正文模板，支持 {title} / {author}",
+      tags: "标签，逗号分隔",
+      limit: "最多生成几条计划"
+    },
+    async run({ db, params, items, run }) {
+      const target = String(params.target || "").trim();
+      if (!target) throw new Error("core.publishPlan 需要 params.target（目标平台）");
+      const limit = Number(params.limit) || 20;
+      const tags = String(params.tags || "");
+      const titleTpl = String(params.titleTemplate || "{title}");
+      const bodyTpl = String(params.bodyTemplate || "{title} · 来自 {author}");
+      const render = (tpl, item) => tpl.split("{title}").join(item.title || "").split("{author}").join(item.author || "");
+      let created = 0;
+      for (const item of items.slice(0, limit)) {
+        const row = db.prepare("SELECT local_path FROM artifacts WHERE platform = ? AND item_id = ?").get(item.platform, item.item_id);
+        const localPath = row && row.local_path ? row.local_path : "";
+        db.prepare(
+          "INSERT INTO publish_plans (run_id, flow_id, platform, status, title, body, tags, files_json, source_platform, created_at, updated_at) " +
+          "VALUES (?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?)"
+        ).run(run.id, run.flow_id, target, render(titleTpl, item), render(bodyTpl, item), tags,
+              JSON.stringify(localPath ? [localPath] : []), item.platform, nowIso(), nowIso());
+        created += 1;
+      }
+      return { detail: "生成 " + created + " 条发布草稿 → " + target, saved: 0 };
+    }
   }
 ]);
 

@@ -4,7 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /** The original model: everything is a flow run that produces artifacts. */
 const SCHEMA = `
@@ -96,6 +96,27 @@ CREATE TABLE IF NOT EXISTS artifacts (
 CREATE INDEX IF NOT EXISTS idx_artifacts_run ON artifacts (run_id);
 `;
 
+/** v2: publish plans turn a run's artifacts into a reviewable relay step. */
+const SCHEMA_2 = `
+CREATE TABLE IF NOT EXISTS publish_plans (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id      INTEGER,
+  flow_id     INTEGER,
+  platform    TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'draft',
+  title       TEXT NOT NULL DEFAULT '',
+  body        TEXT NOT NULL DEFAULT '',
+  tags        TEXT NOT NULL DEFAULT '',
+  files_json  TEXT NOT NULL DEFAULT '[]',
+  source_platform TEXT NOT NULL DEFAULT '',
+  note        TEXT NOT NULL DEFAULT '',
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_publish_plans_run ON publish_plans (run_id);
+`;
+
 export function nowIso() {
   return new Date().toISOString();
 }
@@ -115,6 +136,7 @@ function migrate(db) {
   const current = row ? Number(row.value) : 0;
   if (current >= SCHEMA_VERSION) return;
   if (current < 1) db.exec(SCHEMA);
+  if (current < 2) db.exec(SCHEMA_2);
   db.prepare("INSERT INTO meta (key, value) VALUES ('schema_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(String(SCHEMA_VERSION));
 }
 
@@ -129,6 +151,7 @@ export function counts(db) {
     bindings: one("SELECT COUNT(*) AS n FROM bindings"),
     flows: one("SELECT COUNT(*) AS n FROM flows"),
     runs: one("SELECT COUNT(*) AS n FROM runs"),
-    artifacts: one("SELECT COUNT(*) AS n FROM artifacts")
+    artifacts: one("SELECT COUNT(*) AS n FROM artifacts"),
+    plans: one("SELECT COUNT(*) AS n FROM publish_plans")
   };
 }
