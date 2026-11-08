@@ -145,8 +145,8 @@ set ELECTRON_RUN_AS_NODE=1 && "D:\dsh\DeepSeek Harness.exe" test/smoke.js
 | **M0** skeleton: backend, schema, flow engine, lifecycle, panel | ✅ done |
 | **M1** browser channel + QR login + first platform capability | ✅ done |
 | **M2** flow scheduling, retry, replay | ⏳ |
-| **M3** cross-platform relay (collect on one platform, publish to another) | ⏳ |
-| **M2** 小红书 / 快手 / 视频号 / TikTok capabilities | ⏳ |
+| **M3** cross-platform relay (collect on one platform, publish to another) | ⏳ next |
+| **M2** all five platform search capabilities (one generic engine + descriptors) | ✅ done |
 | **M5** more platforms | ⏳ |
 
 ---

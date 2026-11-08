@@ -46,6 +46,25 @@ export const PLATFORMS = [
   }
 ];
 
+/**
+ * Where to run a search, and which responses carry the results.
+ * Keeping this declarative is what lets one generic capability serve every
+ * platform: the browser does the signing, RelayDeck only reads the wire.
+ */
+export const SEARCH = {
+  douyin: { url: (q) => "https://www.douyin.com/search/" + encodeURIComponent(q), match: /aweme\/v1\/web\/search\/item|search\/item|general\/search/ },
+  xhs: { url: (q) => "https://www.xiaohongshu.com/search_result?keyword=" + encodeURIComponent(q), match: /api\/sns\/web\/v1\/search|search\/notes|search_result/ },
+  kuaishou: { url: (q) => "https://www.kuaishou.com/search/video?searchKey=" + encodeURIComponent(q), match: /graphql|search|visionSearch/ },
+  shipinhao: { url: (q) => "https://channels.weixin.qq.com/platform/search?query=" + encodeURIComponent(q), match: /search|cgi-bin/ },
+  tiktok: { url: (q) => "https://www.tiktok.com/search?q=" + encodeURIComponent(q), match: /api\/search|search\/general|item_list/ }
+};
+
+export function searchPlan(id, query) {
+  const plan = SEARCH[id];
+  if (!plan) return undefined;
+  return { url: plan.url(query), match: plan.match };
+}
+
 export function platform(id) {
   return PLATFORMS.find((p) => p.id === id);
 }
