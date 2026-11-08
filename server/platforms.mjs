@@ -9,7 +9,7 @@ export const PLATFORMS = [
     title: "抖音",
     home: "https://www.douyin.com/",
     loginUrl: "https://www.douyin.com/",
-    sessionCookies: ["sessionid", "sessionid_ss", "passport_csrf_token"],
+    sessionCookies: ["sessionid", "sessionid_ss"],
     hint: "在打开的窗口里用抖音 App 扫码登录，登录完成后回到面板刷新。"
   },
   {
@@ -17,7 +17,7 @@ export const PLATFORMS = [
     title: "小红书",
     home: "https://www.xiaohongshu.com/",
     loginUrl: "https://www.xiaohongshu.com/",
-    sessionCookies: ["web_session", "a1", "webId"],
+    sessionCookies: ["web_session"],
     hint: "用小红书 App 扫码登录。"
   },
   {
@@ -25,7 +25,7 @@ export const PLATFORMS = [
     title: "快手",
     home: "https://www.kuaishou.com/",
     loginUrl: "https://www.kuaishou.com/",
-    sessionCookies: ["did", "kuaishou.web.cp.api_ph", "kuaishou.web.cp.api_st"],
+    sessionCookies: ["kuaishou.web.cp.api_st", "kuaishou.web.cp.api_ph"],
     hint: "用快手 App 扫码登录。"
   },
   {
@@ -33,7 +33,7 @@ export const PLATFORMS = [
     title: "视频号",
     home: "https://channels.weixin.qq.com/platform",
     loginUrl: "https://channels.weixin.qq.com/platform",
-    sessionCookies: ["sessionid", "wxuin", "slave_sid"],
+    sessionCookies: ["slave_sid", "wxuin"],
     hint: "用微信扫码登录视频号助手。"
   },
   {
@@ -41,7 +41,7 @@ export const PLATFORMS = [
     title: "TikTok",
     home: "https://www.tiktok.com/",
     loginUrl: "https://www.tiktok.com/login",
-    sessionCookies: ["sessionid", "sessionid_ss", "sid_tt"],
+    sessionCookies: ["sessionid", "sid_tt"],
     hint: "用 TikTok App 扫码登录（可能需要网络代理）。"
   }
 ];
