@@ -14,6 +14,7 @@ import "./capabilities/core.mjs";
 import "./actions/download.mjs";
 import "./capabilities/websearch.mjs";
 import "./capabilities/publish.mjs";
+import "./capabilities/publish-douyin.mjs";
 import "./capabilities/douyin.mjs";
 import "./capabilities/link.mjs";
 import { closeAllLogins } from "./browser/login.mjs";
