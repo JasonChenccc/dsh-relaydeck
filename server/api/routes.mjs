@@ -9,7 +9,7 @@ import { startLogin, pollLogin, cancelLogin, listLogins, qrImage, verifyBindings
 import { schedulerState, startScheduler, stopScheduler, nextRunAt } from "../scheduler.mjs";
 import { resolveLinks, downloadItems } from "../capabilities/link.mjs";
 import { sendNotification } from "../notify.mjs";
-import { scanMonitor } from "../monitors.mjs";
+import { scanMonitor, scanRecordWatch } from "../monitors.mjs";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 
@@ -266,6 +266,15 @@ export function createRouter({ db, version, startedAt, dataDir, runFlowById, sch
   }
 
   // 采集到的原始记录（评论 / 弹幕）
+  // 立即扫描评论 / 弹幕监控
+  for (const area of [{ path: "comment-watches", table: "comment_watches" }, { path: "danmaku-watches", table: "danmaku_watches" }]) {
+    on("POST", "/api/" + area.path + "/:id/scan", async (params) => {
+      const watch = db.prepare("SELECT * FROM " + area.table + " WHERE id = ?").get(Number(params.id));
+      if (!watch) return { statusCode: 404, payload: { error: "watch not found" } };
+      return { payload: await scanRecordWatch(db, area.table, watch, dataDir) };
+    });
+  }
+
   // 立即扫描一个监控条目
   on("POST", "/api/monitors/:id/scan", async (params) => {
     const monitor = db.prepare("SELECT * FROM monitors WHERE id = ?").get(Number(params.id));

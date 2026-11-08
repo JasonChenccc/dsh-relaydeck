@@ -6,7 +6,7 @@
 // that minute, so a slow run never stacks up.
 import { nowIso } from "./db.mjs";
 import { log, errorText } from "./log.mjs";
-import { scanDueMonitors } from "./monitors.mjs";
+import { scanDueMonitors, scanDueCommentWatches } from "./monitors.mjs";
 
 let timer = null;
 let running = false;
@@ -104,6 +104,7 @@ export async function tick({ db, runFlow, now, dataDir }) {
   // 监控扫描与流程调度共用同一个 tick
   try {
     const scanned = await scanDueMonitors(db, dataDir, at);
+    await scanDueCommentWatches(db, dataDir, at);
     for (const item of scanned) {
       if (item.state === "ok") stats.triggered += 1;
     }

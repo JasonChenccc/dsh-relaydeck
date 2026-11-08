@@ -200,3 +200,110 @@ register({
     });
   }
 });
+
+/** 在页面里运行：读取评论列表。 */
+function readComments() {
+  const list = document.querySelector('[data-e2e="comment-list"]');
+  if (!list) return [];
+  const out = [];
+  for (const card of list.children) {
+    const text = (card.innerText || "").replace(/\s+/g, " ").trim();
+    if (!text || /暂无评论/.test(text)) continue;
+    const img = card.querySelector("img");
+    // 卡片首行通常是昵称，其余是内容
+    const lines = text.split(" ").filter(Boolean);
+    out.push({
+      author: lines[0] || "",
+      text: lines.slice(1).join(" ") || text,
+      avatar: img ? String(img.getAttribute("src") || "") : ""
+    });
+  }
+  return out;
+}
+
+/** 在页面里运行：读取弹幕。 */
+function readDanmaku() {
+  const box = document.querySelector('[data-e2e="danmaku-container"]');
+  if (!box) return [];
+  const rows = Array.from(box.querySelectorAll("div, span"))
+    .map((el) => (el.innerText || "").replace(/\s+/g, " ").trim())
+    .filter((t) => t.length > 0 && t.length < 80);
+  return [...new Set(rows)].slice(0, 500);
+}
+
+async function withVideoPage(dataDir, url, fn) {
+  const { cdp } = await ensureBrowser({ baseDir: dataDir });
+  const page = await openPage(cdp, "about:blank");
+  try {
+    await page.navigate(url, { timeoutMs: 45000 });
+    await new Promise((r) => setTimeout(r, 6000));
+    // 评论区是懒加载：先点开评论图标
+    await page.evaluate("(() => { const el = document.querySelector('[data-e2e=\"feed-comment-icon\"]'); if (el) el.click(); return true; })()").catch(() => {});
+    await new Promise((r) => setTimeout(r, 6000));
+    return await fn(page);
+  } finally { try { await page.close(); } catch (e) { /* gone */ } }
+}
+
+register({
+  id: "douyin.comments",
+  platform: "douyin",
+  stage: "source",
+  title: "抖音评论",
+  description: "打开作品页并展开评论区，读取评论（需要登录）。",
+  params: { url: "作品地址", limit: "最多条数（默认 50）" },
+  async run({ params, dataDir }) {
+    const url = String(params.url || "").trim();
+    if (!url) throw new Error("douyin.comments 需要 params.url");
+    const limit = Number(params.limit) || 50;
+    return await withVideoPage(dataDir, url, async (page) => {
+      let rows = [];
+      for (let i = 0; i < 10 && rows.length === 0; i += 1) {
+        await new Promise((r) => setTimeout(r, 2000));
+        rows = await page.evaluate(runInPage(readComments)).catch(() => []);
+      }
+      const idMatch = String(url).match(/\/video\/(\d+)/);
+      const itemId = idMatch ? idMatch[1] : "video";
+      return rows.slice(0, limit).map((row, index) => ({
+        platform: "douyin",
+        item_id: itemId + "#c" + index,
+        title: row.text,
+        author: row.author,
+        cover_url: row.avatar,
+        media: [],
+        stats: {}
+      }));
+    });
+  }
+});
+
+register({
+  id: "douyin.danmaku",
+  platform: "douyin",
+  stage: "source",
+  title: "抖音弹幕",
+  description: "打开作品页并读取弹幕层文本（需要登录）。",
+  params: { url: "作品地址", limit: "最多条数（默认 200）" },
+  async run({ params, dataDir }) {
+    const url = String(params.url || "").trim();
+    if (!url) throw new Error("douyin.danmaku 需要 params.url");
+    const limit = Number(params.limit) || 200;
+    return await withVideoPage(dataDir, url, async (page) => {
+      let rows = [];
+      for (let i = 0; i < 6 && rows.length === 0; i += 1) {
+        await new Promise((r) => setTimeout(r, 2000));
+        rows = await page.evaluate(runInPage(readDanmaku)).catch(() => []);
+      }
+      const idMatch = String(url).match(/\/video\/(\d+)/);
+      const itemId = idMatch ? idMatch[1] : "video";
+      return rows.slice(0, limit).map((text, index) => ({
+        platform: "douyin",
+        item_id: itemId + "#d" + index,
+        title: text,
+        author: "",
+        cover_url: "",
+        media: [],
+        stats: {}
+      }));
+    });
+  }
+});

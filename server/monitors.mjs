@@ -59,6 +59,52 @@ export async function scanMonitor(db, monitor, dataDir) {
 }
 
 /** 扫描所有到期的监控条目。 */
+/** 评论 / 弹幕监控：采集结果进 records 表。 */
+async function scanRecordWatch(db, table, watch, dataDir) {
+  const capabilityId = table === "comment_watches" ? "douyin.comments" : "douyin.danmaku";
+  const kind = table === "comment_watches" ? "comment" : "danmaku";
+  const capability = getCapability(capabilityId);
+  if (watch.platform !== "douyin" || !capability) {
+    db.prepare("UPDATE " + table + " SET last_scan_at = ?, last_state = 'unsupported', last_error = ? WHERE id = ?")
+      .run(nowIso(), "该平台的评论/弹幕采集能力尚未接入", watch.id);
+    return { id: watch.id, state: "unsupported", added: 0 };
+  }
+  try {
+    const items = await capability.run({ db, params: { url: watch.ref, limit: 200 }, items: [], run: { id: null, flow_id: null }, dataDir });
+    let added = 0;
+    for (const item of items) {
+      const info = db.prepare(
+        "INSERT INTO records (kind, platform, watch_id, ref, text, author, metrics_json, raw_json, created_at) " +
+        "VALUES (?, ?, ?, ?, ?, ?, '{}', '{}', ?) ON CONFLICT(kind, platform, ref) DO NOTHING"
+      ).run(kind, item.platform, watch.id, item.item_id, item.title || "", item.author || "", nowIso());
+      if (info.changes > 0) added += 1;
+    }
+    db.prepare("UPDATE " + table + " SET last_scan_at = ?, last_state = 'ok', last_error = '', items = items + ? WHERE id = ?")
+      .run(nowIso(), added, watch.id);
+    return { id: watch.id, state: "ok", found: items.length, added: added };
+  } catch (error) {
+    db.prepare("UPDATE " + table + " SET last_scan_at = ?, last_state = 'failed', last_error = ? WHERE id = ?")
+      .run(nowIso(), errorText(error), watch.id);
+    return { id: watch.id, state: "failed", added: 0, error: errorText(error) };
+  }
+}
+
+export async function scanDueCommentWatches(db, dataDir, now) {
+  const at = now ? new Date(now) : new Date();
+  const out = [];
+  for (const table of ["comment_watches", "danmaku_watches"]) {
+    for (const watch of db.prepare("SELECT * FROM " + table + " WHERE enabled = 1").all()) {
+      const interval = Number(watch.interval_seconds) || 1800;
+      const last = watch.last_scan_at ? new Date(watch.last_scan_at).getTime() : 0;
+      if (last !== 0 && at.getTime() - last < interval * 1000) continue;
+      out.push(await scanRecordWatch(db, table, watch, dataDir));
+    }
+  }
+  return out;
+}
+
+export { scanRecordWatch };
+
 export async function scanDueMonitors(db, dataDir, now) {
   const at = now ? new Date(now) : new Date();
   const rows = db.prepare("SELECT * FROM monitors WHERE enabled = 1").all();

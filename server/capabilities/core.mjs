@@ -166,7 +166,27 @@ registerAll([
       return { detail: "生成 " + created + " 条发布草稿 → " + target, saved: 0 };
     }
   },
-
+  {
+    id: "core.storeRecords",
+    platform: "core",
+    stage: "action",
+    title: "存入记录",
+    description: "把条目作为原始记录存入（评论 / 弹幕），不进入素材库。",
+    params: { kind: "记录类型：comment | danmaku", watchId: "关联的监控条目 id" },
+    async run({ db, params, items }) {
+      const kind = String(params.kind || "comment");
+      const watchId = params.watchId === undefined ? null : Number(params.watchId);
+      let saved = 0;
+      for (const item of items) {
+        const info = db.prepare(
+          "INSERT INTO records (kind, platform, watch_id, ref, text, author, metrics_json, raw_json, created_at) " +
+          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(kind, platform, ref) DO NOTHING"
+        ).run(kind, item.platform, watchId, item.item_id, item.title || "", item.author || "", JSON.stringify(item.stats || {}), "{}", nowIso());
+        if (info.changes > 0) saved += 1;
+      }
+      return { detail: "新增 " + saved + " 条" + kind, saved: saved };
+    }
+  }
 ]);
 
 export { normalizeItem };
