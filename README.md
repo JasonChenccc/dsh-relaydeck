@@ -135,6 +135,21 @@ node scripts/dev-pack.mjs                # rebuild + repackage the tarball
 
 Save a file under `lib/panel/**` → `client.js` is rebuilt → the Host swaps the plugin into the open page. Change `lib/index.js` → use the panel's **开发调试 → 重载插件**.
 
+### A linked plugin needs its peer packages linked too
+
+A linked plugin resolves imports from its **own** directory, so the harness packages it
+imports must be reachable from the source tree. Without them the plugin fails to import
+with `ERR_MODULE_NOT_FOUND` and silently disappears from DSH — no panel, no tools.
+
+`scripts/dev-enable.mjs` creates these links under the source `node_modules/@deepseek-ai/`
+(dev-only, gitignored). Setting a profile up by hand means creating them yourself:
+
+```powershell
+mkdir D:\work\work\workstation\creatorhub-dsh\node_modules\@deepseek-ai
+cmd /c mklink /J "...\node_modules\@deepseek-ai\schemastery" "%USERPROFILE%\.dsh\profiles\desktop\node_modules\@deepseek-ai\schemastery"
+cmd /c mklink /J "...\node_modules\@deepseek-ai\cosmokit"     "%USERPROFILE%\.dsh\profiles\desktop\node_modules\@deepseek-ai\cosmokit"
+```
+
 The backend is plain Node: run it standalone with
 `node server/index.mjs --port=18731 --data=.tmp-data`.
 

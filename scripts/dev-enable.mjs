@@ -6,7 +6,7 @@
 // It (1) links this source directory into the profile instead of a packed tgz,
 // (2) ensures the plugin is in the profile bundles, and (3) adds an hmr entry with
 // root watching + a 300 ms debounce. Every touched file is backed up first.
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,15 +32,41 @@ if (!existsSync(pkgPath)) {
 const manifest = JSON.parse(readFileSync(pkgPath, "utf8"));
 const currentSpec = manifest.dependencies ? manifest.dependencies[pkgName] : undefined;
 const bundles = (manifest.dsh && manifest.dsh.profile && manifest.dsh.profile.bundles) || [];
+const peerLinks = linkPeerDependencies();
 const patchText = existsSync(patchPath) ? readFileSync(patchPath, "utf8") : "";
 const hasHmr = /^-\s*id:\s*hmr\s*$/m.test(patchText);
 const hasConfig = new RegExp("^-\\s*id:\\s*" + entryId + "\\s*$", "m").test(patchText);
+
+/**
+ * A linked plugin resolves its imports from its OWN directory, not from the
+ * profile. The harness packages it imports (@deepseek-ai/schemastery, cosmokit)
+ * therefore have to be reachable from the source tree, or the plugin fails to
+ * import with ERR_MODULE_NOT_FOUND and silently disappears from DSH.
+ * These links are dev-environment only and stay out of the repository
+ * (node_modules/ is gitignored).
+ */
+function linkPeerDependencies() {
+  const scope = join(pluginRoot, "node_modules", "@deepseek-ai");
+  const source = join(profileDir, "node_modules", "@deepseek-ai");
+  const linked = [];
+  if (!existsSync(source)) return linked;
+  mkdirSync(scope, { recursive: true });
+  for (const entry of readdirSync(source)) {
+    const target = join(source, entry);
+    const link = join(scope, entry);
+    if (existsSync(link)) continue;
+    try { symlinkSync(target, link, "junction"); linked.push(entry); }
+    catch (error) { linked.push(entry + " (failed: " + error.code + ")"); }
+  }
+  return linked;
+}
 
 const plan = [
   { step: "dependency", package: pkgName, from: currentSpec, to: linkSpec },
   { step: "bundles", present: bundles.includes(pkgName) },
   { step: "hmr-entry", present: hasHmr },
-  { step: "dev-config", id: entryId, present: hasConfig }
+  { step: "dev-config", id: entryId, present: hasConfig },
+  { step: "peer-links", linked: peerLinks }
 ];
 
 if (!apply) {

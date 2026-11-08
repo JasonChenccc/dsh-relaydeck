@@ -44,5 +44,10 @@
     "content",
     "flow",
     "automation"
-  ]
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-tools": "*",
+    "@deepseek-ai/schemastery": "*"
+  }
 }
