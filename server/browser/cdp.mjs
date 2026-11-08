@@ -50,7 +50,7 @@ export async function launchBrowser(options = {}) {
     "--no-first-run",
     "--no-default-browser-check",
     "--disable-features=Translate,OptimizationHints",
-    ...(options.headless ? ["--headless=new"] : []),
+    ...(options.headless ? ["--headless=new"] : ["--window-size=560,760", "--window-position=60,60"]),
     ...(options.args || []),
     options.startUrl || "about:blank"
   ];

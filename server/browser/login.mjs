@@ -42,6 +42,9 @@ export async function startLogin(db, platformId, options = {}) {
     if (existing.platform === platformId && existing.state === "waiting") return sessionView(existing);
   }
 
+  // Headed on purpose: platform login pages serve a captcha interstitial to a
+  // headless browser. The window is sized like a compact panel and the QR is also
+  // mirrored into the RelayDeck UI, so scanning can happen from either place.
   const { cdp } = await ensureBrowser({ headless: false, baseDir: options.baseDir });
   const page = await openPage(cdp, p.loginUrl);
   const session = {
@@ -93,6 +96,53 @@ export async function pollLogin(db, id) {
     session.state = "failed";
     session.error = errorText(error);
     return sessionView(session);
+  }
+}
+
+/**
+ * Screenshot just the QR code region so the panel can show it inline instead of
+ * opening a browser window.
+ */
+export async function qrImage(id) {
+  const session = sessions.get(id);
+  if (!session) return { found: false, reason: "unknown login" };
+  if (session.state !== "waiting") return { found: false, reason: session.state };
+  try {
+    // Login QR codes are rendered as inline data-URL images (or a canvas). That
+    // signature is far more precise than "largest square element", which happily
+    // matches video thumbnails.
+    const rect = await session.page.evaluate(`(() => {
+      const nodes = Array.from(document.querySelectorAll('img, canvas'));
+      let best = null;
+      for (const node of nodes) {
+        const box = node.getBoundingClientRect();
+        if (box.width < 110 || box.width > 340) continue;
+        if (Math.abs(box.width - box.height) > box.width * 0.25) continue;
+        if (box.bottom < 0 || box.right < 0 || box.top > innerHeight || box.left > innerWidth) continue;
+        const src = String(node.getAttribute('src') || '');
+        const inline = src.startsWith('data:image/');
+        const qrLike = inline
+          || node.tagName === 'CANVAS'
+          || /qr|code/i.test(String(node.className || ''))
+          || /qr|code/i.test(src);
+        if (!qrLike) continue;
+        const area = box.width * box.height;
+        if (!best || area > best.area) {
+          best = { x: box.x, y: box.y, width: box.width, height: box.height, area, inline };
+        }
+      }
+      return best ? { x: best.x, y: best.y, width: best.width, height: best.height, inline: best.inline } : null;
+    })()`).catch(() => null);
+
+    if (!rect) return { found: false, reason: "页面上还没有出现二维码，请稍后重试" };
+
+    const shot = await session.page.send("Page.captureScreenshot", {
+      format: "png",
+      clip: { x: Math.max(0, rect.x - 8), y: Math.max(0, rect.y - 8), width: rect.width + 16, height: rect.height + 16, scale: 3 }
+    });
+    return { found: true, rect, inline: rect.inline, image: "data:image/png;base64," + shot.data, capturedAt: new Date().toISOString() };
+  } catch (error) {
+    return { found: false, reason: errorText(error) };
   }
 }
 

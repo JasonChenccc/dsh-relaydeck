@@ -5,7 +5,7 @@ import { list as listCapabilities } from "../capabilities/index.mjs";
 import { executeFlow, readRun, readFlow, validateSpec } from "../flow.mjs";
 import { errorText } from "../log.mjs";
 import { platform, platformIds } from "../platforms.mjs";
-import { startLogin, pollLogin, cancelLogin, listLogins } from "../browser/login.mjs";
+import { startLogin, pollLogin, cancelLogin, listLogins, qrImage } from "../browser/login.mjs";
 import { schedulerState, startScheduler, stopScheduler, nextRunAt } from "../scheduler.mjs";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
@@ -180,7 +180,22 @@ export function createRouter({ db, version, startedAt, dataDir, runFlowById, sch
 
   on("GET", "/api/login/:id", (params) => pollLogin(db, params.id));
 
+  on("GET", "/api/login/:id/qr", (params) => qrImage(params.id));
+
   on("POST", "/api/login/:id/cancel", (params) => cancelLogin(params.id));
+
+  // Clear demo/test residue so the panel starts from a clean slate.
+  on("POST", "/api/purge", async (_params, req) => {
+    const body = await readJson(req);
+    const keepBindings = body.keepBindings !== false;
+    db.exec("DELETE FROM run_steps");
+    db.exec("DELETE FROM runs");
+    db.exec("DELETE FROM artifacts");
+    db.exec("DELETE FROM publish_plans");
+    db.exec("DELETE FROM flows");
+    if (!keepBindings) db.exec("DELETE FROM bindings");
+    return { payload: { purged: true, keepBindings } };
+  });
 
   on("GET", "/api/bindings", () => ({ items: db.prepare("SELECT id, platform, label, nickname, state, proxy, last_used_at, created_at FROM bindings ORDER BY id DESC").all() }));
 
