@@ -1,41 +1,33 @@
-// Phase 1 smoke: load the plugin in the host runtime and assert the
-// creatorhub_ping stub payload. Run with electron-as-node from this directory.
-import { registerHooks } from "node:module";
+// Smoke: the plugin half loads, registers its tools, and reports identity.
+import { makeContext, assert, heading, loadPlugin } from "./harness.mjs";
 
-const ASAR = "file:///D:/dsh/resources/app.asar/dsh/node_modules/@deepseek-ai";
-registerHooks({
-  resolve(specifier, context, nextResolve) {
-    if (specifier === "@deepseek-ai/schemastery") return { url: ASAR + "/schemastery/lib/index.mjs", shortCircuit: true };
-    if (specifier === "@deepseek-ai/dsh-tools") return { url: ASAR + "/dsh-tools/lib/index.js", shortCircuit: true };
-    return nextResolve(specifier, context);
-  }
-});
-
-const plugin = await import("../lib/index.js");
-
-const tools = new Map();
-const ctx = {
-  tools: { register: (def) => { tools.set(def.name, def); return () => {}; } },
-  logger: { warn() {}, error() {}, info() {}, debug() {} },
-  effect: () => () => {},
-  inject: () => {},
-  get: () => undefined,
-};
-
-const cfg = plugin.Config["~standard"].validate({}).value;
+const plugin = await loadPlugin();
+const { ctx, tools } = makeContext();
+const cfg = plugin.Config["~standard"].validate({ autostart: false }).value;
 plugin.apply(ctx, cfg);
 
-const ping = tools.get("creatorhub_ping");
-if (!ping) throw new Error("creatorhub_ping was not registered");
-const result = await ping.execute({}, {});
+heading("registered tools");
+const names = [...tools.keys()].sort();
+console.log(names.join(", "));
+assert(names.length >= 12, "registers at least 12 tools (" + names.length + ")");
+assert(names.every((n) => n.startsWith("relaydeck_")), "every tool is namespaced relaydeck_");
+assert(names.includes("relaydeck_ping"), "relaydeck_ping registered");
+assert(names.includes("relaydeck_status"), "relaydeck_status registered");
+assert(names.includes("relaydeck_flow_create"), "relaydeck_flow_create registered");
+assert(names.includes("relaydeck_flow_run"), "relaydeck_flow_run registered");
 
-console.log("registered tools:", [...tools.keys()].join(", "));
-console.log("creatorhub_ping =>", JSON.stringify(result));
+heading("relaydeck_ping");
+const ping = await tools.get("relaydeck_ping").execute({}, {});
+console.log(JSON.stringify(ping));
+assert(ping.ok === true, "ping ok");
+assert(ping.plugin === "dsh-relaydeck", "plugin identity is dsh-relaydeck");
+assert(ping.autostart === false, "autostart reflects config");
+assert(ping.devMode === false, "devMode off for a packed install");
 
-const assert = (cond, msg) => { if (!cond) { console.error("ASSERT FAIL:", msg); process.exitCode = 1; } else console.log("ASSERT OK:", msg); };
-assert(result.ok === true, "ok is true");
-assert(result.plugin === "dsh-SAmanager", "plugin name");
-assert(result.phase === 1, "phase is 1");
-assert(result.baseUrl === "http://127.0.0.1:8731", "baseUrl default is loopback 8731");
-assert(result.autostart === true, "autostart default is true (backend starts with the plugin)");
-console.log("SMOKE PASS");
+heading("relaydeck_config_get");
+const conf = await tools.get("relaydeck_config_get").execute({}, {});
+console.log(JSON.stringify(conf));
+assert(conf.port === 18731, "default port is 18731");
+assert(typeof conf.backendEntry === "string" && conf.backendEntry.endsWith("index.mjs"), "backend entry resolved");
+
+console.log("\nSMOKE " + (process.exitCode ? "FAIL" : "PASS"));

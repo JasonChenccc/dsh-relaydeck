@@ -55,3 +55,28 @@
 .sa-trend { display: flex; flex-wrap: wrap; gap: 6px; }
 .sa-trend span { padding: 2px 6px; border-radius: 4px; background: var(--dsw-alias-bg-layer-2, rgba(0,0,0,.03)); color: var(--dsw-alias-label-secondary, #4b5563); font-size: 12px; }
 .sa-section-title { font-weight: 600; margin-top: 4px; }
+
+.sa-dev-log {
+  margin: 0; padding: 10px; border-radius: 8px; max-height: 260px; overflow: auto;
+  background: var(--dsw-alias-markdown-code-block, rgba(0,0,0,.04));
+  color: var(--dsw-alias-label-secondary, #4b5563);
+  font: var(--dsh-font-family-code, ui-monospace, monospace); font-size: 12px; white-space: pre-wrap; word-break: break-all;
+}
+
+.sa-list { display: flex; flex-direction: column; gap: 6px; }
+.sa-list-row {
+  padding: 6px 8px; border-radius: 6px;
+  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.06));
+}
+.sa-input {
+  width: 100%; padding: 6px 10px; border-radius: 6px; font: inherit;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));
+  background: var(--dsw-alias-bg-base, transparent); color: inherit;
+}
+.sa-textarea {
+  width: 100%; min-height: 150px; padding: 10px; border-radius: 8px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));
+  background: var(--dsw-alias-markdown-code-block, rgba(0,0,0,.03));
+  color: inherit; font: var(--dsh-font-family-code, ui-monospace, monospace);
+  font-size: 12px; white-space: pre;
+}

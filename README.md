@@ -1,162 +1,161 @@
-# dsh-SAmanager
+# RelayDeck
 
-DeepSeek Harness (DSH) Cordis plugin that bridges the local **CreatorHub**
-content workbench (抖音 / 小红书 / 快手 / 视频号 / TikTok) into agent tools and a
-desktop sidebar panel.
+**A DSH-native content relay workbench.** Declare a flow — *source → filters → actions* — and it collects, narrows, stores and moves content for you. Every execution is traced and replayable.
 
-Status: Phase 6 (config bridge + docs + packaging). Version 0.1.0, MIT.
+```
+dsh-relaydeck   ·   panel label: RelayDeck   ·   entry id: dsh-relaydeck
+```
+
+---
+
+## The idea
+
+Most content tools are organised as feature pages: an account page, a monitor page, a publish page. You click through them one at a time.
+
+RelayDeck is organised around **flows**. One flow is one sentence:
+
+> "Take the top videos for *camping* with 1000+ likes, download them, and publish them."
+
+That sentence is a first-class, savable, schedulable, replayable entity:
+
+```json
+{
+  "source":  { "capability": "core.manual", "params": { "items": [ /* ... */ ] } },
+  "filters": [ { "capability": "core.stat", "params": { "field": "like_count", "op": ">=", "value": 1000 } } ],
+  "actions": [ { "capability": "core.store" }, { "capability": "notify", "params": { "message": "done" } } ]
+}
+```
+
+The panel is an **observability surface**, not a control panel: it shows what is running, what it produced, and where it failed.
+
+---
+
+## Core model
+
+| Concept | Meaning |
+|---|---|
+| **Capability** | One ability on one platform, in one stage: `source` / `filter` / `action` |
+| **Flow** | `source → filters[] → actions[]` — the product's main entity |
+| **Run** | One execution of a flow |
+| **RunStep** | One stage execution inside a run: inputs, outputs, detail, error |
+| **Artifact** | A content item a run produced and stored |
+| **Binding** | Platform credentials / login state (never a password) |
+
+Adding a platform means **registering capabilities**. Every existing flow can immediately reference them — no new pages, no new schema.
+
+---
 
 ## Architecture
 
 ```
-        ┌─────────────────────── DSH host (Node, Cordis tree) ───────────────────────┐
-        │  lib/index.js                                                             │
-        │    22 tools: 5 built-in + 6 read-only + 10 approval-gated writes + config  │
-        │    ctx.inject(["webServer"]) ──> GET /dsh-samanager/config  (read-only)   │
-        └───────────────┬───────────────────────────────────────────┬───────────────┘
-                        │ loopback HTTP                             │ same-origin fetch
-                        v                                           v
-        ┌──── CreatorHub :8731 ────┐              ┌──── DSH web client (browser) ────┐
-        │ FastAPI + SQLite + CDP   │              │  client.js (side panel)          │
-        │ /health, /api/*          │              │   ctx.slots.inject(              │
-        └──────────────────────────┘              │     "sidebar.panellist"/"main")  │
-                                                  └──────────────────────────────────┘
+dsh-relaydeck/
+├── lib/            DSH plugin half (tools, lifecycle, host routes)
+├── client.js       panel bundle (generated)
+└── server/         the product: own Node backend, zero dependencies
+    ├── index.mjs       127.0.0.1:18731
+    ├── db.mjs          node:sqlite schema + migrations
+    ├── flow.mjs        the flow engine
+    ├── capabilities/   registry + built-in core capabilities
+    └── api/            routes shared by the panel and the tools
 ```
 
-**Chains**
+* **Runtime**: DSH's bundled Node. Users install nothing else — no Python, no virtualenv, no separate download.
+* **Storage**: `node:sqlite` (built in).
+* **HTTP**: `node:http` (built in).
+* **Panel**: hand-written DOM, DSH design tokens, no framework.
+* **Lifecycle**: the plugin spawns the backend through `ctx.subprocess`; disposing the plugin reaps the whole process range.
 
-- **Write path**: tool → `normalizeApiPath` (reject absolute/`//`/`..`) → shared
-  `WRITE_WHITELIST` (method + path template) → approval ×1 (medium) or ×2 (high) →
-  redacted audit log → `callApi` on the loopback base URL. No match → `forbidden`;
-  not `allowed-once` → `approval-denied` / `secondary-approval-denied`; no request sent.
-- **Approval gate**: `ctx.get("approval").request({agent, toolName, callId?, reason?,
-  displayReason?, signal?})` → `allowed-once | rejected | cancelled | unavailable`.
-  Missing service, missing agent, thrown error, or any non-grant outcome fails closed.
-- **Config bridge**: the client half cannot read the host `ctx` (the client runner
-  mounts it with no config — `dsh-cordis-client-runner/lib/client.js:564`), so the host
-  registers a read-only exact route `GET /dsh-samanager/config` behind the connection
-  Host/Origin fence, and the panel fetches it. Resolution order:
-  **bridge → `config.baseUrl` → `ctx.config.baseUrl` → default `http://127.0.0.1:8731`**;
-  any non-loopback value is rejected.
+The panel runs on the DSH origin, so it reaches the backend through the same-origin route `/dsh-relaydeck/proxy` — never by calling the loopback port directly.
 
-## Tools
+---
 
-Built-in: `creatorhub_ping`, `creatorhub_status`, `creatorhub_start`, `creatorhub_stop`,
-`creatorhub_request` (GET is an unapproved read; non-GET is whitelist + approval gated).
+## Panel
 
-Read-only: `creatorhub_overview`, `creatorhub_accounts`, `creatorhub_account_stats`,
-`creatorhub_task_queue`, `creatorhub_monitors`, `creatorhub_collections`,
-`creatorhub_config_get`.
+| View | What it shows |
+|---|---|
+| 看板 Dashboard | Backend health, flow/run/artifact counts, most recent runs, current DSH session |
+| 流程 Flows | Flow list, run/delete, create from a spec |
+| 运行 Runs | Run history; click a run to see its step-by-step trace |
+| 素材 Library | Artifacts produced by runs |
+| 账号 Accounts | Platform bindings / login state |
+| 能力 Capabilities | Every registered capability, grouped by stage |
+| 开发调试 Dev | Reload / repack / restart helpers |
+| 关于 About | Version, license, disclaimer |
 
-Approval-gated writes (risk / approvals):
+---
 
-| tool | method + path | risk | approvals |
-|---|---|---|---|
-| creatorhub_login | POST /api/login/{slug}/start | high | 2 |
-| creatorhub_task_create | POST /api/collections | high | 2 |
-| creatorhub_task_cancel | POST /api/collections/{job_id}/cancel | medium | 1 |
-| creatorhub_monitor_add | POST /api/monitors | high | 2 |
-| creatorhub_monitor_remove | DELETE /api/monitors/{tid} | medium | 1 |
-| creatorhub_download | POST /api/share-download | high | 2 |
-| creatorhub_publish | POST /api/publish | high | 2 |
-| creatorhub_comment | POST /api/comment-rules | high | 2 |
-| creatorhub_message | POST /api/account-actions (send_dm) | high | 2 |
-| creatorhub_proxy_set | PUT /api/accounts/{account_id}/proxy | medium | 1 |
+## Agent tools
 
-All HTTP is loopback-only (127.0.0.1 / localhost); non-loopback base URLs are rejected.
+All tools are namespaced `relaydeck_*`.
 
-## Install / run / test / package
+**Read** — `relaydeck_ping`, `relaydeck_config_get`, `relaydeck_status`, `relaydeck_capabilities`, `relaydeck_flow_list`, `relaydeck_run_list`, `relaydeck_run_get`, `relaydeck_artifact_list`, `relaydeck_binding_list`
 
-Install into a profile (a local path installs as a `link:` dependency):
+**Write** — `relaydeck_start`, `relaydeck_stop`, `relaydeck_flow_create`, `relaydeck_flow_run`, `relaydeck_flow_delete`
 
-    dsh plugin --profile <name> add <path-to-this-directory>
+---
 
-Compose check:
+## Configuration
 
-    dsh --profile <name> --dump-config          # expect: id: dsh-samanager / name: dsh-SAmanager
-    dsh --profile <name> --dump-config-schema   # expect: the creatorhub config fragment
+```yaml
+- id: dsh-relaydeck
+  config:
+    port: 18731              # loopback backend port
+    dataDir: ""              # defaults to ~/.relaydeck
+    autostart: true          # start the backend with the plugin
+    startTimeoutMs: 30000
+    requestTimeoutMs: 30000
+    devMode: false           # enables /dsh-relaydeck/dev/* routes
+    allowHostRestart: false
+```
 
-Tests (no standalone Node is required; the bundled runtime runs them):
+`devMode` also turns itself on automatically when the package is loaded through a link (dev source).
 
-    set ELECTRON_RUN_AS_NODE=1
-    "D:\dsh\DeepSeek Harness.exe" test/smoke.js
-    "D:\dsh\DeepSeek Harness.exe" test/phase2-io.js
-    "D:\dsh\DeepSeek Harness.exe" test/phase3-readonly.js
-    "D:\dsh\DeepSeek Harness.exe" test/phase4-io.js
-    "D:\dsh\DeepSeek Harness.exe" test/client-contract.js
-    "D:\dsh\DeepSeek Harness.exe" test/config-bridge.js
+---
 
-The IO tests start the real CreatorHub backend on **port 8731** (not 8000; that port is
-often taken by unrelated services) and stop it afterwards. `phase2-io.js` and
-`phase3-readonly.js` need a provisioned CreatorHub environment; run
-`python creatorhub.py install --skip-browser --skip-node` once if the venv is missing.
+## Development
 
-Package contents (`package.json.files`): `lib/index.js`, `client.js`, `icon.svg`,
-`cordis.patch.yml`, `README.md`, `docs/`, `test/`. `.venv/`, `data/` and `config.yaml`
-are never included.
+```powershell
+node scripts/dev-enable.mjs              # dry run: show planned profile changes
+node scripts/dev-enable.mjs --apply      # back up the profile, switch to link: + enable HMR
+node scripts/build-client.mjs --watch    # rebuild client.js on save (300 ms debounce)
+node scripts/dev-pack.mjs                # rebuild + repackage the tarball
+```
 
-## Desktop panel (client half)
+Save a file under `lib/panel/**` → `client.js` is rebuilt → the Host swaps the plugin into the open page. Change `lib/index.js` → use the panel's **开发调试 → 重载插件**.
 
-`dsh.client = { "platform": "web" }` plus `exports["./client"] = "./client.js"`. The
-browser half is a native-JS `window.__ModuleLoader__.load({ id, factory })` bundle (no
-build step, no JSX, no external resources); the factory returns `{ apply, inject }` with
-`inject = ["slots"]`.
+The backend is plain Node: run it standalone with
+`node server/index.mjs --port=18731 --data=.tmp-data`.
 
-Contributions use the real slot contract:
+### Tests
 
-    ctx.slots.inject("sidebar.panellist", () => ctx.slots.register(
-      { name: "sidebar.panellist", id: "dsh-samanager", order: 50, label: "SA Manager" },
-      CreatorHubIcon));
-    ctx.slots.inject("main", () => ctx.slots.register(
-      { name: "main", key: "dsh-samanager" },
-      CreatorHubPanel));
+```powershell
+# from a checkout of the DSH desktop app
+set ELECTRON_RUN_AS_NODE=1 && "D:\dsh\DeepSeek Harness.exe" test/smoke.js
+```
 
-The panel shows the plugin name, the effective `baseUrl`, the **config source**
-(host bridge / injected config / default), a `/health` status dot (30 s poll) and an
-**打开工作台** button. When the source is `default` the panel says the address is
-unconfirmed. If the bridge times out the panel falls back silently and keeps working.
+`smoke · lifecycle · readonly · write · client-contract · config-bridge`
 
-**Why a button, not an iframe:** the DSH Web GUI authenticates through a signed session
-cookie and Host/Origin fences, and the CreatorHub workbench is a separate origin with its
-own (absent) auth and long-lived session. Embedding it via `<iframe>` would either be
-blocked by CSP/`frame-ancestors` or create a second unmanaged session, and "fixing" that
-would mean weakening the host fences. `window.open` to the loopback origin is the
-supported, non-hacky path.
+---
 
-### Manual test checklist (desktop GUI)
+## Status
 
-1. Install the plugin into the desktop profile and restart DSH.
-2. Sidebar shows a **SA Manager** entry with the check-mark icon.
-3. Selecting it shows the panel: name, base URL, **配置来源：宿主配置桥** (or
-   **配置来源：默认地址** with the amber unconfirmed warning), and a status dot.
-4. CreatorHub stopped → red 服务离线; after `creatorhub_start` (or manual start) → green
-   服务在线 within 30 s.
-5. **打开工作台** opens the workbench at the loopback base URL in a new tab.
-6. Change the plugin `baseUrl` in the profile patch and reload: the panel shows the new
-   value with source 宿主配置桥.
+| Milestone | State |
+|---|---|
+| **M0** skeleton: backend, schema, flow engine, lifecycle, panel | ✅ done |
+| **M1** first real platform capability (search → filter → store → download) | ⏳ next |
+| **M2** flow scheduling, retry, replay | ⏳ |
+| **M3** cross-platform relay (collect on one platform, publish to another) | ⏳ |
+| **M4** browser-based QR login | ⏳ |
+| **M5** more platforms | ⏳ |
 
-## Known limitations
+---
 
-1. **Config bridge is an HTTP route, not the official client-config mechanism.**
-   0.2.1-rc.5 has no host→client config channel, so this plugin registers its own
-   read-only route (`GET /dsh-samanager/config`) gated by the connection fence.
-   Replace it when an official mechanism lands.
-2. **GUI rendering is unverified here.** This environment is CLI/headless; the button
-   path, icon rendering and dot colouring need the desktop checklist above.
-3. **Approval requires an open turn.** `approval.request()` throws outside a turn; the
-   plugin catches it and denies. Tools therefore cannot be approved from a non-agent
-   caller.
-4. **`Config.baseUrl` defaults are not visible to the client half.** Unless the row
-   config sets `baseUrl`, the bridge reports the host default and the panel labels it
-   `默认地址`.
-5. **Writes are real.** With an empty database they fail naturally (4xx), but on a
-   populated deployment the write tools perform real platform actions. Approval is the
-   only guard, so review every prompt.
-6. **The test suite proves plugin-side HTTP only.** "No request sent" does not prove the
-   CreatorHub process performed no external action, and a granted request returning 4xx
-   does not prove zero external side effects.
+## Independence
 
-## Notice
+RelayDeck is an independent project. It contains no third-party content-tool code, assets, text or design, and it does not bundle, launch or require any other workbench. Platform integrations are implemented here, against the platforms' own public web interfaces, using the credentials of the user's own accounts. See `NOTICE`.
 
-For technical learning and personal content management only. Respect each platform
-rules and local law; respect content copyright and personal privacy.
+Platform terms of service govern automated access to those platforms; using this software is your responsibility.
+
+## License
+
+MIT — see `LICENSE`.

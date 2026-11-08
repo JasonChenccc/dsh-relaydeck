@@ -1,0 +1,26 @@
+RelayDeck
+=========
+
+RelayDeck is an independent, self-contained project.
+
+* It ships its own backend (server/) written from scratch in Node.
+* It contains no third-party content-tool source code, front-end assets, icons,
+  text, or design files.
+* It does not bundle, install, launch, or require any other content workbench.
+* Platform integrations are implemented by this project directly against the
+  platforms' own public web interfaces, using the credentials of the user's own
+  accounts.
+
+Notices about third-party works
+-------------------------------
+
+None. If a future contribution adds third-party code or assets, that addition
+must carry its own license and attribution here, and must be compatible with
+this project's MIT license.
+
+Trademarks
+----------
+
+Product and platform names that may appear in documentation are the trademarks
+of their respective owners and are used only to describe interoperability. Their
+use does not imply any affiliation with or endorsement by those owners.

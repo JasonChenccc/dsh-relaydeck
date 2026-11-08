@@ -1,7 +1,7 @@
 {
-  "name": "dsh-SAmanager",
+  "name": "dsh-relaydeck",
   "version": "0.1.0",
-  "description": "SA Manager — DeepSeek Harness desktop integration for the local CreatorHub workbench (抖音/小红书/快手/视频号/TikTok): managed backend lifecycle, read-only API tools, approval-gated write tools and a native sidebar panel.",
+  "description": "RelayDeck — a DSH-native content relay workbench. Flows (source → filters → actions) that collect, transform and move content across platforms; runs are traced and replayable. Self-contained: ships its own Node backend, no external runtime.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -11,26 +11,23 @@
   },
   "files": [
     "lib",
+    "server",
     "client.js",
     "icon.svg",
     "cordis.patch.yml",
     "README.md",
     "docs",
     "scripts",
-    "test"
+    "test",
+    "LICENSE",
+    "NOTICE"
   ],
   "license": "MIT",
-  "keywords": [
-    "dsh-plugin",
-    "deepseek-harness",
-    "creatorhub",
-    "cordis",
-    "dsh-samanager"
-  ],
-  "peerDependencies": {
-    "@deepseek-ai/cordis": "*",
-    "@deepseek-ai/dsh-tools": "*",
-    "@deepseek-ai/schemastery": "*"
+  "icon": "icon.svg",
+  "scripts": {
+    "build": "node scripts/build-client.mjs",
+    "watch": "node scripts/build-client.mjs --watch",
+    "pack": "node scripts/dev-pack.mjs"
   },
   "dsh": {
     "bundle": {
@@ -40,5 +37,12 @@
       "platform": "web"
     }
   },
-  "icon": "icon.svg"
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "relaydeck",
+    "content",
+    "flow",
+    "automation"
+  ]
 }

@@ -1,12 +1,12 @@
 // GENERATED FILE — edit lib/panel/** or lib/host/** then run: node scripts/build-client.mjs
 // DSH serves one bundle per package (exports["./client"]); the modules are inlined below.
 window.__ModuleLoader__.load({
-  id: "dsh-SAmanager",
+  id: "dsh-relaydeck",
   factory: (require) => {
     var module = { exports: {} };
     var exports = module.exports;
     var React = require("react");
-    var PANEL_CSS = ".sa-manager-host { height: 100%; min-height: 320px; display: flex; }\n.sa-panel {\n  display: flex; flex-direction: row; align-items: stretch; width: 100%; height: 100%;\n  font: var(--dsh-content-font-size, 13px)/1.6 var(--dsh-font-family-text, system-ui, sans-serif);\n  color: var(--dsw-alias-label-primary, #1f2328);\n  background: var(--dsw-alias-bg-base, transparent);\n}\n.sa-nav {\n  width: 152px; flex: 0 0 auto; overflow: auto; padding: 10px 8px;\n  border-right: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08));\n  display: flex; flex-direction: column; gap: 2px;\n}\n.sa-nav-item {\n  appearance: none; border: 0; background: transparent; cursor: pointer; text-align: left;\n  padding: 7px 10px; border-radius: 6px; font: inherit;\n  color: var(--dsw-alias-label-secondary, #4b5563);\n}\n.sa-nav-item:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.04)); }\n.sa-nav-item[aria-current=\"true\"] {\n  background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.06));\n  color: var(--dsw-alias-label-primary, #111); font-weight: 600;\n}\n.sa-nav-item:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #4f46e5); outline-offset: 1px; }\n.sa-main { flex: 1; min-width: 0; overflow: auto; padding: 14px; }\n.sa-view { display: flex; flex-direction: column; gap: 12px; }\n.sa-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }\n.sa-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--dsw-alias-state-idle-primary, #9ca3af); }\n.sa-dot[data-state=\"online\"] { background: var(--dsw-alias-state-success-primary, #22c55e); }\n.sa-dot[data-state=\"offline\"] { background: var(--dsw-alias-state-error-primary, #ef4444); }\n.sa-muted { color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-caption { color: var(--dsw-alias-label-caption, #9ca3af); font-size: 12px; }\n.sa-warn { color: var(--dsw-alias-state-warn-primary, #b45309); font-size: 12px; }\n.sa-addr { word-break: break-all; color: var(--dsw-alias-label-secondary, #4b5563); }\n.sa-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }\n.sa-card {\n  padding: 10px; border-radius: 8px; border: 1px solid var(--dsw-alias-settings-card-stroke, rgba(0,0,0,.08));\n  background: var(--dsw-alias-settings-card-fill, rgba(0,0,0,.02));\n}\n.sa-card b { display: block; font-size: 18px; font-weight: 600; }\n.sa-btn {\n  appearance: none; cursor: pointer; font: inherit; padding: 6px 12px; border-radius: 6px;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n  background: var(--dsw-alias-button-elevated-fill, transparent);\n  color: var(--dsw-alias-label-primary, #111);\n}\n.sa-btn:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.05)); }\n.sa-btn:disabled { cursor: not-allowed; opacity: .5; }\n.sa-btn[data-variant=\"primary\"] {\n  border-color: transparent; background: var(--dsw-alias-button-primary-fill, #4f46e5); color: #fff;\n}\n.sa-table { width: 100%; border-collapse: collapse; }\n.sa-table th, .sa-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.06)); vertical-align: top; }\n.sa-table th { color: var(--dsw-alias-label-tertiary, #6b7280); font-weight: 500; white-space: nowrap; }\n.sa-empty { padding: 24px 8px; text-align: center; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-trend { display: flex; flex-wrap: wrap; gap: 6px; }\n.sa-trend span { padding: 2px 6px; border-radius: 4px; background: var(--dsw-alias-bg-layer-2, rgba(0,0,0,.03)); color: var(--dsw-alias-label-secondary, #4b5563); font-size: 12px; }\n.sa-section-title { font-weight: 600; margin-top: 4px; }\n";
+    var PANEL_CSS = ".sa-manager-host { height: 100%; min-height: 320px; display: flex; }\n.sa-panel {\n  display: flex; flex-direction: row; align-items: stretch; width: 100%; height: 100%;\n  font: var(--dsh-content-font-size, 13px)/1.6 var(--dsh-font-family-text, system-ui, sans-serif);\n  color: var(--dsw-alias-label-primary, #1f2328);\n  background: var(--dsw-alias-bg-base, transparent);\n}\n.sa-nav {\n  width: 152px; flex: 0 0 auto; overflow: auto; padding: 10px 8px;\n  border-right: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08));\n  display: flex; flex-direction: column; gap: 2px;\n}\n.sa-nav-item {\n  appearance: none; border: 0; background: transparent; cursor: pointer; text-align: left;\n  padding: 7px 10px; border-radius: 6px; font: inherit;\n  color: var(--dsw-alias-label-secondary, #4b5563);\n}\n.sa-nav-item:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.04)); }\n.sa-nav-item[aria-current=\"true\"] {\n  background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.06));\n  color: var(--dsw-alias-label-primary, #111); font-weight: 600;\n}\n.sa-nav-item:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #4f46e5); outline-offset: 1px; }\n.sa-main { flex: 1; min-width: 0; overflow: auto; padding: 14px; }\n.sa-view { display: flex; flex-direction: column; gap: 12px; }\n.sa-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }\n.sa-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--dsw-alias-state-idle-primary, #9ca3af); }\n.sa-dot[data-state=\"online\"] { background: var(--dsw-alias-state-success-primary, #22c55e); }\n.sa-dot[data-state=\"offline\"] { background: var(--dsw-alias-state-error-primary, #ef4444); }\n.sa-muted { color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-caption { color: var(--dsw-alias-label-caption, #9ca3af); font-size: 12px; }\n.sa-warn { color: var(--dsw-alias-state-warn-primary, #b45309); font-size: 12px; }\n.sa-addr { word-break: break-all; color: var(--dsw-alias-label-secondary, #4b5563); }\n.sa-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }\n.sa-card {\n  padding: 10px; border-radius: 8px; border: 1px solid var(--dsw-alias-settings-card-stroke, rgba(0,0,0,.08));\n  background: var(--dsw-alias-settings-card-fill, rgba(0,0,0,.02));\n}\n.sa-card b { display: block; font-size: 18px; font-weight: 600; }\n.sa-btn {\n  appearance: none; cursor: pointer; font: inherit; padding: 6px 12px; border-radius: 6px;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n  background: var(--dsw-alias-button-elevated-fill, transparent);\n  color: var(--dsw-alias-label-primary, #111);\n}\n.sa-btn:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.05)); }\n.sa-btn:disabled { cursor: not-allowed; opacity: .5; }\n.sa-btn[data-variant=\"primary\"] {\n  border-color: transparent; background: var(--dsw-alias-button-primary-fill, #4f46e5); color: #fff;\n}\n.sa-table { width: 100%; border-collapse: collapse; }\n.sa-table th, .sa-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.06)); vertical-align: top; }\n.sa-table th { color: var(--dsw-alias-label-tertiary, #6b7280); font-weight: 500; white-space: nowrap; }\n.sa-empty { padding: 24px 8px; text-align: center; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-trend { display: flex; flex-wrap: wrap; gap: 6px; }\n.sa-trend span { padding: 2px 6px; border-radius: 4px; background: var(--dsw-alias-bg-layer-2, rgba(0,0,0,.03)); color: var(--dsw-alias-label-secondary, #4b5563); font-size: 12px; }\n.sa-section-title { font-weight: 600; margin-top: 4px; }\n\n.sa-dev-log {\n  margin: 0; padding: 10px; border-radius: 8px; max-height: 260px; overflow: auto;\n  background: var(--dsw-alias-markdown-code-block, rgba(0,0,0,.04));\n  color: var(--dsw-alias-label-secondary, #4b5563);\n  font: var(--dsh-font-family-code, ui-monospace, monospace); font-size: 12px; white-space: pre-wrap; word-break: break-all;\n}\n\n.sa-list { display: flex; flex-direction: column; gap: 6px; }\n.sa-list-row {\n  padding: 6px 8px; border-radius: 6px;\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.06));\n}\n.sa-input {\n  width: 100%; padding: 6px 10px; border-radius: 6px; font: inherit;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n  background: var(--dsw-alias-bg-base, transparent); color: inherit;\n}\n.sa-textarea {\n  width: 100%; min-height: 150px; padding: 10px; border-radius: 8px;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n  background: var(--dsw-alias-markdown-code-block, rgba(0,0,0,.03));\n  color: inherit; font: var(--dsh-font-family-code, ui-monospace, monospace);\n  font-size: 12px; white-space: pre;\n}\n";
 
 // ---- lib/panel/dom.js ----
 // SA Manager panel — tiny DOM helpers (no framework, no external deps).
@@ -80,96 +80,45 @@ function createEventBus() {
 
 
 // ---- lib/panel/bridge.js ----
-// SA Manager panel — CreatorHub API client.
-// Every read goes through host.proxyFetch, which calls the same-origin Host route
-// /dsh-samanager/proxy. There is deliberately NO direct-fetch fallback: a direct
-// browser request to 127.0.0.1:8731 is cross-origin and would be masked by CORS
-// as "Failed to fetch", hiding the real wiring problem.
-var PLATFORMS = ["douyin", "xhs", "kuaishou", "shipinhao", "tiktok"];
-var PLATFORM_OPTIONS = [
-  { value: "", label: "全部平台" },
-  { value: "douyin", label: "抖音" },
-  { value: "xhs", label: "小红书" },
-  { value: "kuaishou", label: "快手" },
-  { value: "shipinhao", label: "视频号" },
-  { value: "tiktok", label: "TikTok" }
-];
-
-var PROXY_UNAVAILABLE = "宿主代理不可用（host.proxyFetch 未注入）";
-
-function createApiBridge(baseUrl, proxy) {
-  function request(path, timeoutMs) {
+// RelayDeck panel — backend API client. Every call goes through the host proxy,
+// so the renderer never talks to the loopback port itself.
+function createApiBridge(proxy) {
+  function call(method, path, body, timeoutMs) {
     if (typeof proxy !== "function") {
-      return Promise.resolve({ ok: false, status: 0, data: null, raw: "", latencyMs: 0, error: PROXY_UNAVAILABLE });
+      return Promise.resolve({ ok: false, status: 0, data: null, error: "宿主代理不可用（host.proxyFetch 未注入）" });
     }
-    var started = Date.now();
-    var run;
+    const started = Date.now();
+    let pending;
     try {
-      run = proxy(path, { timeoutMs: timeoutMs });
-    } catch (err) {
-      return Promise.resolve({ ok: false, status: 0, data: null, raw: "", latencyMs: Date.now() - started, error: String(err && err.message ? err.message : err) });
+      pending = proxy(path, { method: method, body: body, timeoutMs: timeoutMs });
+    } catch (error) {
+      return Promise.resolve({ ok: false, status: 0, data: null, error: String(error && error.message ? error.message : error) });
     }
-    return Promise.resolve(run).then(function (res) {
-      if (!res) return { ok: false, status: 0, data: null, raw: "", latencyMs: Date.now() - started, error: "empty proxy response" };
-      return {
-        ok: res.ok === true,
-        status: res.status || 0,
-        data: res.data === undefined ? null : res.data,
-        raw: res.data === undefined || res.data === null ? "" : JSON.stringify(res.data),
-        error: res.error,
-        latencyMs: Date.now() - started
-      };
-    }).catch(function (err) {
-      return { ok: false, status: 0, data: null, raw: "", latencyMs: Date.now() - started, error: String(err && err.message ? err.message : err) };
+    return Promise.resolve(pending).then(function (res) {
+      if (!res) return { ok: false, status: 0, data: null, error: "empty proxy response" };
+      return { ok: res.ok === true, status: res.status || 0, data: res.data === undefined ? null : res.data, error: res.error, latencyMs: Date.now() - started };
+    }).catch(function (error) {
+      return { ok: false, status: 0, data: null, error: String(error && error.message ? error.message : error), latencyMs: Date.now() - started };
     });
   }
 
-  function query(platform) {
-    return platform ? ("?platform=" + encodeURIComponent(platform)) : "";
-  }
-
   return {
-    baseUrl: baseUrl,
-    request: request,
-    getHealth: function () {
-      return request("/health", 3000).then(function (res) {
-        return {
-          online: res.ok,
-          status: res.status,
-          latencyMs: res.latencyMs,
-          raw: res.raw,
-          error: res.ok ? undefined : (res.error || ("HTTP " + res.status))
-        };
-      });
+    call: call,
+    health: function () { return call("GET", "/health", undefined, 4000); },
+    capabilities: function () { return call("GET", "/api/capabilities"); },
+    flows: function () { return call("GET", "/api/flows"); },
+    createFlow: function (payload) { return call("POST", "/api/flows", payload); },
+    updateFlow: function (id, payload) { return call("PUT", "/api/flows/" + encodeURIComponent(String(id)), payload); },
+    deleteFlow: function (id) { return call("DELETE", "/api/flows/" + encodeURIComponent(String(id))); },
+    runFlow: function (id) { return call("POST", "/api/flows/" + encodeURIComponent(String(id)) + "/run", {}, 60000); },
+    runs: function (limit) { return call("GET", "/api/runs?limit=" + encodeURIComponent(String(limit || 50))); },
+    run: function (id) { return call("GET", "/api/runs/" + encodeURIComponent(String(id))); },
+    artifacts: function (limit, platform) {
+      let path = "/api/artifacts?limit=" + encodeURIComponent(String(limit || 100));
+      if (platform) path += "&platform=" + encodeURIComponent(platform);
+      return call("GET", path);
     },
-    getOverview: function (platform) { return request("/api/overview/summary?platform=" + encodeURIComponent(platform || "douyin")); },
-    getSeries: function (platform, days) { return request("/api/stats/series?days=" + encodeURIComponent(String(days || 7)) + (platform ? "&platform=" + encodeURIComponent(platform) : "")); },
-    getAccounts: function (platform) { return request("/api/accounts" + query(platform)); },
-    getRiskSummary: function () { return request("/api/risk-control/summary"); },
-    getMonitors: function () { return request("/api/monitors"); },
-    getAccountWorks: function (accountId) { return request("/api/account-works?account_id=" + encodeURIComponent(String(accountId))); },
-    getCollections: function () { return request("/api/collections"); },
-    getCommentWatches: function () { return request("/api/comment-watches"); },
-    getComments: function () { return request("/api/comments"); },
-    getDanmakuWatches: function () { return request("/api/danmaku-watches"); },
-    getDanmaku: function () { return request("/api/danmaku"); },
-    getHubSummary: function (accountId) { return request("/api/hub/summary?account_id=" + encodeURIComponent(String(accountId))); },
-    getAccountStats: function (accountId) { return request("/api/account-stats/" + encodeURIComponent(String(accountId))); },
-    getTasks: function (options) {
-      var opts = options || {};
-      var q = "state=" + encodeURIComponent(opts.state || "active") +
-        "&page=" + encodeURIComponent(String(opts.page || 1)) +
-        "&page_size=" + encodeURIComponent(String(opts.pageSize || 20));
-      if (opts.platform) q += "&platform=" + encodeURIComponent(opts.platform);
-      if (opts.q) q += "&q=" + encodeURIComponent(opts.q);
-      return request("/api/task-queue?" + q);
-    },
-    getPublish: function () { return request("/api/publish"); },
-    getPublished: function () { return request("/api/publish/published"); },
-    getCommentRules: function () { return request("/api/comment-rules"); },
-    getCommentTasks: function () { return request("/api/comment-tasks"); },
-    getShareHistory: function () { return request("/api/share-download/history"); },
-    getNotifications: function () { return request("/api/notifications"); }
+    bindings: function () { return call("GET", "/api/bindings"); }
   };
 }
 
@@ -276,21 +225,17 @@ function renderList(ctx, config) {
 }
 
 
-// ---- lib/panel/views/overview.js ----
-// 工作概览：当前会话 + 健康灯 + 配置来源 + 总览卡片 + 近 7 天数字趋势 + 快捷操作。
+// ---- lib/panel/views/dashboard.js ----
+// 看板 — 一屏看清：后端健康、流转规模、最近运行、当前会话。
 
-function renderOverview(ctx) {
+function renderDashboard(ctx) {
   var api = ctx.api;
   var events = ctx.events;
-  var navigate = ctx.navigate;
-  var resolved = ctx.resolved;
   var root = h("div", { className: "sa-view" });
   var disposers = [];
   var timer = null;
   var disposed = false;
-  var platform = "douyin";
 
-  // ---- 当前会话 ----
   var sessionDot = h("span", { className: "sa-dot", "data-state": "idle" });
   var sessionMeta = h("span", { className: "sa-caption" }, "");
   root.appendChild(h("div", { className: "sa-card" }, [
@@ -307,7 +252,6 @@ function renderOverview(ctx) {
     sessionMeta.textContent = [
       session.title || "(未命名会话)",
       typeof session.messageCount === "number" ? session.messageCount + " 条消息" : null,
-      typeof session.sessionCount === "number" ? "共 " + session.sessionCount + " 个会话" : null,
       session.running ? "运行中" : "空闲"
     ].filter(Boolean).join(" · ");
     sessionDot.dataset.state = session.running ? "online" : "idle";
@@ -316,103 +260,66 @@ function renderOverview(ctx) {
   if (events && typeof events.on === "function") {
     disposers.push(events.on("session-context", applySession));
     disposers.push(events.on("agent-status", function (payload) {
-      if (!payload) return;
-      applySession({ available: true, running: payload.running === true });
+      if (payload) applySession({ available: true, running: payload.running === true });
     }));
   }
 
-  // ---- 健康灯 / 地址 / 配置来源 ----
   var dot = h("span", { className: "sa-dot", "data-state": "idle" });
   var stateText = h("span", null, "检测中");
   var latency = h("span", { className: "sa-muted" }, "");
   var refreshBtn = h("button", { type: "button", className: "sa-btn", onClick: refresh }, "刷新");
-  var addr = h("div", { className: "sa-addr" }, resolved.baseUrl);
-  var sourceText = resolved.source === "host-bridge" ? "配置来源：宿主配置桥"
-    : resolved.source === "host-config" ? "配置来源：宿主注入的 config"
-    : "配置来源：默认地址";
-  var source = h("div", { className: "sa-caption" }, sourceText);
   root.appendChild(h("div", { className: "sa-row" }, [dot, stateText, latency, refreshBtn]));
-  root.appendChild(h("div", { className: "sa-row" }, [addr]));
-  root.appendChild(h("div", { className: "sa-row" }, [source]));
-  if (resolved.source === "default") root.appendChild(h("div", { className: "sa-warn" }, "默认地址，未确认与 CreatorHub 实际端口一致。"));
 
-  // ---- 平台白名单 ----
-  var platformSelect = h("select", { className: "sa-btn", onChange: function (e) { platform = e.target.value; refresh(); } });
-  PLATFORM_OPTIONS.forEach(function (opt) {
-    if (!opt.value) return;
-    var el = h("option", { value: opt.value }, opt.label);
-    if (opt.value === platform) el.setAttribute("selected", "selected");
-    platformSelect.appendChild(el);
-  });
-  root.appendChild(h("div", { className: "sa-row" }, [h("span", { className: "sa-caption" }, "平台"), platformSelect]));
-
-  // ---- 总览卡片 ----
   var cards = h("div", { className: "sa-cards" });
   function card(label) {
     var value = h("b", null, "-");
     cards.appendChild(h("div", { className: "sa-card" }, [value, h("span", { className: "sa-caption" }, label)]));
     return value;
   }
-  var cAccounts = card("账号");
-  var cMonitors = card("启用监控");
-  var cDownloaded = card("已下载");
-  var cComments = card("评论");
+  var cFlows = card("流程");
+  var cRuns = card("运行");
+  var cArtifacts = card("素材");
+  var cBindings = card("账号");
   root.appendChild(cards);
 
-  // ---- 近 7 天（纯数字）----
-  var trend = h("div", { className: "sa-trend" });
-  root.appendChild(h("div", { className: "sa-section-title" }, "近 7 天采集"));
-  root.appendChild(trend);
-
-  // ---- 快捷操作 ----
-  var actions = h("div", { className: "sa-row" });
-  [["tasks", "任务队列"], ["publish", "发布"], ["collections", "关键词采集"], ["downloads", "链接下载"]].forEach(function (pair) {
-    actions.appendChild(h("button", { type: "button", className: "sa-btn", onClick: function () { navigate(pair[0]); } }, pair[1]));
-  });
-  root.appendChild(h("div", { className: "sa-section-title" }, "快捷操作"));
-  root.appendChild(actions);
+  root.appendChild(h("div", { className: "sa-section-title" }, "最近运行"));
+  var recent = h("div", { className: "sa-list" });
+  root.appendChild(recent);
 
   function refresh() {
     if (disposed) return;
     refreshBtn.disabled = true;
-    api.getHealth().then(function (health) {
+    api.health().then(function (res) {
       if (disposed) return;
-      dot.dataset.state = health.online ? "online" : "offline";
-      stateText.textContent = health.online ? "服务在线" : "服务离线";
-      latency.textContent = health.online ? (health.latencyMs + " ms") : (health.error || "");
       refreshBtn.disabled = false;
+      var data = res.ok && res.data ? res.data : null;
+      dot.dataset.state = res.ok ? "online" : "offline";
+      stateText.textContent = res.ok ? "后端在线" : "后端离线";
+      latency.textContent = res.ok ? ((res.latencyMs || 0) + " ms") : (res.error || "");
+      var counts = data && data.counts ? data.counts : {};
+      cFlows.textContent = String(counts.flows === undefined ? "-" : counts.flows);
+      cRuns.textContent = String(counts.runs === undefined ? "-" : counts.runs);
+      cArtifacts.textContent = String(counts.artifacts === undefined ? "-" : counts.artifacts);
+      cBindings.textContent = String(counts.bindings === undefined ? "-" : counts.bindings);
     });
-    api.getOverview(platform).then(function (res) {
+    api.runs(8).then(function (res) {
       if (disposed) return;
-      var data = res && res.ok && res.data ? res.data : {};
-      cAccounts.textContent = String(data.accounts === undefined ? "-" : data.accounts);
-      cMonitors.textContent = String(data.monitors === undefined ? "-" : data.monitors);
-      cDownloaded.textContent = String(data.downloaded === undefined ? "-" : data.downloaded);
-      cComments.textContent = String(data.comments === undefined ? "-" : data.comments);
-    });
-    api.getSeries(platform, 7).then(function (res) {
-      if (disposed) return;
-      while (trend.firstChild) trend.removeChild(trend.firstChild);
-      var data = res && res.ok && res.data ? res.data : null;
-      if (!data || !Array.isArray(data.days)) { trend.appendChild(h("span", null, "暂无数据")); return; }
-      var contents = Array.isArray(data.contents) ? data.contents : [];
-      var comments = Array.isArray(data.comments) ? data.comments : [];
-      for (var i = 0; i < data.days.length; i++) {
-        trend.appendChild(h("span", null, String(data.days[i]).slice(5) + " 作品 " + (contents[i] === undefined ? 0 : contents[i]) + " / 评论 " + (comments[i] === undefined ? 0 : comments[i])));
-      }
+      clear(recent);
+      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
+      if (items.length === 0) { recent.appendChild(h("div", { className: "sa-empty" }, "还没有运行记录。到「流程」建一条并执行。")); return; }
+      items.forEach(function (run) {
+        recent.appendChild(h("div", { className: "sa-row sa-list-row" }, [
+          h("span", { className: "sa-dot", "data-state": run.state === "ok" ? "online" : (run.state === "failed" ? "offline" : "idle") }),
+          h("span", { style: { flex: 1 } }, run.flow_name || ("流程 " + run.flow_id)),
+          h("span", { className: "sa-caption" }, "发现 " + run.found + " · 保留 " + run.kept + " · 写入 " + run.saved),
+          h("span", { className: "sa-caption" }, fmtTime(run.started_at))
+        ]));
+      });
     });
   }
 
-  function activate() {
-    if (disposed || timer !== null) return;
-    refresh();
-    timer = setInterval(refresh, 10000);
-  }
-  function deactivate() {
-    if (timer === null) return;
-    clearInterval(timer);
-    timer = null;
-  }
+  function activate() { if (disposed || timer !== null) return; refresh(); timer = setInterval(refresh, 10000); }
+  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
 
   return {
     element: root,
@@ -421,375 +328,421 @@ function renderOverview(ctx) {
     dispose: function () {
       disposed = true;
       deactivate();
-      while (disposers.length > 0) { try { disposers.pop()(); } catch (e) { /* already gone */ } }
+      while (disposers.length > 0) { try { disposers.pop()(); } catch (e) { /* gone */ } }
     }
   };
 }
 
 
+// ---- lib/panel/views/flows.js ----
+// 流程 — 产品核心：源 → 筛选 → 动作。可建、可跑、可删。
+
+var TEMPLATE = "{\"source\":{\"capability\":\"core.manual\",\"params\":{\"platform\":\"demo\",\"items\":[{\"item_id\":\"a1\",\"title\":\"示例条目 A\",\"stats\":{\"like_count\":1500}},{\"item_id\":\"a2\",\"title\":\"示例条目 B\",\"stats\":{\"like_count\":90}}]}},\"filters\":[{\"capability\":\"core.stat\",\"params\":{\"field\":\"like_count\",\"op\":\">=\",\"value\":1000}}],\"actions\":[{\"capability\":\"core.store\"},{\"capability\":\"core.notify\",\"params\":{\"message\":\"完成\"}}]}";
+
+function renderFlows(ctx) {
+  var api = ctx.api;
+  var events = ctx.events;
+  var root = h("div", { className: "sa-view" });
+  var disposers = [];
+  var timer = null;
+  var disposed = false;
+
+  var nameInput = h("input", { className: "sa-input", placeholder: "流程名称" });
+  var specArea = h("textarea", { className: "sa-textarea", spellcheck: "false" });
+  specArea.value = TEMPLATE;
+  var createBtn = h("button", { type: "button", className: "sa-btn", "data-variant": "primary", onClick: create }, "创建流程");
+  var status = h("div", { className: "sa-caption" }, "");
+  var list = h("div", { className: "sa-list" });
+
+  root.appendChild(h("div", { className: "sa-section-title" }, "新建流程"));
+  root.appendChild(h("div", { className: "sa-caption" }, "一条流程 = 源(source) → 筛选(filters) → 动作(actions)。下面是可直接运行的示例。"));
+  root.appendChild(nameInput);
+  root.appendChild(specArea);
+  root.appendChild(h("div", { className: "sa-row" }, [createBtn, status]));
+  root.appendChild(h("div", { className: "sa-section-title" }, "流程列表"));
+  root.appendChild(list);
+
+  async function create() {
+    createBtn.disabled = true;
+    try {
+      var spec;
+      try { spec = JSON.parse(specArea.value); } catch (e) { status.textContent = "规格不是合法 JSON"; return; }
+      var res = await api.createFlow({ name: nameInput.value || "未命名流程", spec: spec, trigger: "manual" });
+      status.textContent = res.ok ? "已创建 #" + (res.data && res.data.id) : ("创建失败：" + (res.error || res.status));
+      if (res.ok) { nameInput.value = ""; refresh(); }
+    } finally { createBtn.disabled = false; }
+  }
+
+  async function runFlow(id, button) {
+    button.disabled = true;
+    button.textContent = "运行中…";
+    try {
+      var res = await api.runFlow(id);
+      var run = res.ok && res.data ? res.data : null;
+      status.textContent = run ? ("运行 #" + run.id + " " + run.state + "：发现 " + run.found + " / 保留 " + run.kept + " / 写入 " + run.saved) : ("运行失败：" + (res.error || res.status));
+      refresh();
+    } finally { button.disabled = false; button.textContent = "运行"; }
+  }
+
+  async function removeFlow(id) {
+    status.textContent = "删除中…";
+    var res = await api.deleteFlow(id);
+    status.textContent = res.ok ? "已删除" : ("删除失败：" + (res.error || res.status));
+    refresh();
+  }
+
+  function refresh() {
+    if (disposed) return;
+    api.flows().then(function (res) {
+      if (disposed) return;
+      clear(list);
+      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
+      if (items.length === 0) { list.appendChild(h("div", { className: "sa-empty" }, "还没有流程。用上面的示例创建一个。" )); return; }
+      items.forEach(function (flow) {
+        var runBtn = h("button", { type: "button", className: "sa-btn", onClick: function () { runFlow(flow.id, runBtn); } }, "运行");
+        list.appendChild(h("div", { className: "sa-card" }, [
+          h("div", { className: "sa-row" }, [
+            h("span", { className: "sa-dot", "data-state": flow.last_state === "ok" ? "online" : (flow.last_state === "failed" ? "offline" : "idle") }),
+            h("span", { style: { fontWeight: 600, flex: 1 } }, "#" + flow.id + " " + flow.name),
+            h("span", { className: "sa-caption" }, flow.trigger + (flow.last_run_at ? " · " + fmtTime(flow.last_run_at) : "")),
+            runBtn,
+            h("button", { type: "button", className: "sa-btn", onClick: function () { removeFlow(flow.id); } }, "删除")
+          ]),
+          h("pre", { className: "sa-dev-log" }, JSON.stringify(flow.spec))
+        ]));
+      });
+    });
+  }
+
+  function activate() { if (disposed || timer !== null) return; refresh(); timer = setInterval(refresh, 10000); }
+  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
+  return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); while (disposers.length) { try { disposers.pop()(); } catch (e) {} } } };
+}
+
+
+// ---- lib/panel/views/runs.js ----
+// 运行 — 每次执行的轨迹：哪个阶段、进了多少、出了多少、错在哪。
+
+function renderRuns(ctx) {
+  var api = ctx.api;
+  var root = h("div", { className: "sa-view" });
+  var timer = null;
+  var disposed = false;
+  var list = h("div", { className: "sa-list" });
+  var detail = h("div", { className: "sa-list" });
+
+  root.appendChild(h("div", { className: "sa-section-title" }, "运行历史"));
+  root.appendChild(list);
+  root.appendChild(h("div", { className: "sa-section-title" }, "轨迹"));
+  root.appendChild(detail);
+
+  async function showRun(id) {
+    clear(detail);
+    var res = await api.run(id);
+    if (!res.ok || !res.data) { detail.appendChild(h("div", { className: "sa-empty" }, "读取失败：" + (res.error || res.status))); return; }
+    var run = res.data;
+    detail.appendChild(h("div", { className: "sa-row" }, [
+      h("span", { style: { fontWeight: 600 } }, "运行 #" + run.id + " " + run.state),
+      h("span", { className: "sa-caption" }, "发现 " + run.found + " · 保留 " + run.kept + " · 写入 " + run.saved + (run.error ? " · " + run.error : ""))
+    ]));
+    (run.steps || []).forEach(function (step) {
+      detail.appendChild(h("div", { className: "sa-row sa-list-row" }, [
+        h("span", { className: "sa-dot", "data-state": step.state === "ok" ? "online" : "offline" }),
+        h("span", { style: { width: "54px" } }, step.stage),
+        h("span", { style: { flex: 1 } }, step.capability),
+        h("span", { className: "sa-caption" }, "in " + step.in_count + " → out " + step.out_count),
+        step.detail ? h("span", { className: "sa-caption" }, step.detail) : null,
+        step.error ? h("span", { className: "sa-warn" }, step.error) : null
+      ]));
+    });
+  }
+
+  function refresh() {
+    if (disposed) return;
+    api.runs(30).then(function (res) {
+      if (disposed) return;
+      clear(list);
+      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
+      if (items.length === 0) { list.appendChild(h("div", { className: "sa-empty" }, "还没有运行记录。")); return; }
+      items.forEach(function (run) {
+        var row = h("div", { className: "sa-row sa-list-row", style: { cursor: "pointer" }, onClick: function () { showRun(run.id); } }, [
+          h("span", { className: "sa-dot", "data-state": run.state === "ok" ? "online" : (run.state === "failed" ? "offline" : "idle") }),
+          h("span", { style: { width: "58px" } }, "#" + run.id),
+          h("span", { style: { flex: 1 } }, run.flow_name || "-"),
+          h("span", { className: "sa-caption" }, run.state),
+          h("span", { className: "sa-caption" }, fmtTime(run.started_at))
+        ]);
+        list.appendChild(row);
+      });
+    });
+  }
+
+  function activate() { if (disposed || timer !== null) return; refresh(); timer = setInterval(refresh, 10000); }
+  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
+  return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
+}
+
+
+// ---- lib/panel/views/library.js ----
+// 素材 — 流程产出的内容产物。
+
+function renderLibrary(ctx) {
+  var api = ctx.api;
+  return renderList(ctx, {
+    description: "流程产出的素材。",
+    empty: "素材库还是空的——到「流程」跑一条试试。",
+    columns: [
+      { label: "平台", key: "platform" },
+      { label: "标题", render: function (r) { return r.title || r.item_id; } },
+      { label: "作者", render: function (r) { return r.author || "-"; } },
+      { label: "下载", render: function (r) { return r.download_state === "none" ? "-" : r.download_state; } },
+      { label: "采集时间", render: function (r) { return fmtTime(r.collected_at); } }
+    ],
+    load: function () { return api.artifacts(100); }
+  });
+}
+
+
 // ---- lib/panel/views/accounts.js ----
-// 平台账号：只读列表 + 平台白名单筛选。
+// 账号 — 平台凭据与登录态。
 
 function renderAccounts(ctx) {
   var api = ctx.api;
   return renderList(ctx, {
-    description: "CreatorHub 已添加的平台账号。",
-    empty: "暂无账号",
-    filters: [{ id: "platform", value: "", options: PLATFORM_OPTIONS }],
+    description: "平台凭据（Cookie / 登录态）。当前版本尚未接入登录流程，这里会随平台能力上线而出现条目。",
+    empty: "还没有绑定任何账号。",
     columns: [
-      { label: "昵称", render: function (r) { return r.nickname || r.douyin_id || r.uid || "-"; } },
       { label: "平台", key: "platform" },
-      { label: "粉丝", render: function (r) { return r.follower_count === undefined ? "-" : r.follower_count; } },
-      { label: "状态", key: "status" },
+      { label: "名称", render: function (r) { return r.label || r.nickname || "-"; } },
+      { label: "状态", key: "state" },
       { label: "代理", render: function (r) { return r.proxy ? "已配置" : "直连"; } },
-      { label: "更新时间", render: function (r) { return fmtTime(r.updated_at || r.created_at); } }
+      { label: "最近使用", render: function (r) { return fmtTime(r.last_used_at); } }
     ],
-    load: function (s) { return api.getAccounts(s.platform); }
+    load: function () { return api.bindings(); }
   });
 }
 
 
-// ---- lib/panel/views/monitors.js ----
-// 作品监控：只读列表。
+// ---- lib/panel/views/capabilities.js ----
+// 能力 — agent 与流程可用的动作面，按阶段分组。
 
-function renderMonitors(ctx) {
-  var api = ctx.api;
-  return renderList(ctx, {
-    description: "监控中的博主 / 关键词目标。",
-    empty: "暂无监控目标",
-    columns: [
-      { label: "昵称", render: function (r) { return r.nickname || r.alias || "-"; } },
-      { label: "平台", key: "platform" },
-      { label: "类型", key: "target_kind" },
-      { label: "启用", render: function (r) { return r.enabled ? "是" : "否"; } },
-      { label: "间隔(秒)", key: "interval_seconds" },
-      { label: "最近扫描", render: function (r) { return fmtTime(r.last_scan_at); } },
-      { label: "错误", render: function (r) { return r.last_error || "-"; } }
-    ],
-    load: function () { return api.getMonitors(); }
-  });
-}
+var STAGE_LABEL = { source: "源（产出条目）", filter: "筛选（收窄条目）", action: "动作（消费条目）" };
 
-
-// ---- lib/panel/views/collections.js ----
-// 关键词采集：只读列表。
-
-function renderCollections(ctx) {
-  var api = ctx.api;
-  return renderList(ctx, {
-    description: "关键词采集任务。",
-    empty: "暂无采集任务",
-    columns: [
-      { label: "平台", key: "platform" },
-      { label: "来源", key: "source_type" },
-      { label: "关键词", render: function (r) { return r.keywords || "-"; } },
-      { label: "状态", key: "status" },
-      { label: "当前关键词", key: "current_keyword" },
-      { label: "创建时间", render: function (r) { return fmtTime(r.created_at); } }
-    ],
-    load: function () { return api.getCollections(); }
-  });
-}
-
-
-// ---- lib/panel/views/comment-watches.js ----
-// 评论监控：只读列表。
-
-function renderCommentWatches(ctx) {
-  var api = ctx.api;
-  return renderList(ctx, {
-    description: "评论监控目标。",
-    empty: "暂无评论监控",
-    columns: [
-      { label: "标题", render: function (r) { return r.title || r.alias || "-"; } },
-      { label: "平台", key: "platform" },
-      { label: "启用", render: function (r) { return r.enabled ? "是" : "否"; } },
-      { label: "评论数", render: function (r) { return r.comment_count === undefined ? "-" : r.comment_count; } },
-      { label: "最近扫描", render: function (r) { return fmtTime(r.last_scan_at); } },
-      { label: "错误", render: function (r) { return r.last_error || "-"; } }
-    ],
-    load: function () { return api.getCommentWatches(); }
-  });
-}
-
-
-// ---- lib/panel/views/danmaku-watches.js ----
-// 弹幕监控：只读列表。
-
-function renderDanmakuWatches(ctx) {
-  var api = ctx.api;
-  return renderList(ctx, {
-    description: "弹幕监控目标。",
-    empty: "暂无弹幕监控",
-    columns: [
-      { label: "标题", render: function (r) { return r.title || r.alias || "-"; } },
-      { label: "平台", key: "platform" },
-      { label: "模式", key: "mode" },
-      { label: "启用", render: function (r) { return r.enabled ? "是" : "否"; } },
-      { label: "最近扫描", render: function (r) { return fmtTime(r.last_scan_at); } },
-      { label: "错误", render: function (r) { return r.last_error || "-"; } }
-    ],
-    load: function () { return api.getDanmakuWatches(); }
-  });
-}
-
-
-// ---- lib/panel/views/account-hub.js ----
-// 本账号管理：先选账号，再按 account_id 拉 hub summary。
-// /api/hub/summary 不接受缺省 account_id（422），所以这里必须等用户选定。
-
-function renderAccountHub(ctx) {
+function renderCapabilities(ctx) {
   var api = ctx.api;
   var root = h("div", { className: "sa-view" });
   var timer = null;
   var disposed = false;
-  var accountId = null;
-  var loaded = false;
+  var body = h("div", { className: "sa-list" });
 
-  var select = h("select", { className: "sa-btn", onChange: function (e) { accountId = e.target.value ? Number(e.target.value) : null; refresh(); } });
-  var status = h("span", { className: "sa-caption" }, "加载账号…");
-  var cards = h("div", { className: "sa-cards" });
-  function card(label) {
-    var value = h("b", null, "-");
-    cards.appendChild(h("div", { className: "sa-card" }, [value, h("span", { className: "sa-caption" }, label)]));
-    return value;
-  }
-  var cWorks = card("作品");
-  var cFollowing = card("关注");
-  var cFans = card("粉丝");
-  var cDm = card("私信会话");
-
-  root.appendChild(h("div", { className: "sa-row" }, [h("span", { className: "sa-caption" }, "账号"), select, status]));
-  root.appendChild(cards);
-
-  function showEmpty(text) {
-    while (cards.firstChild) cards.removeChild(cards.firstChild);
-    cards.appendChild(h("div", { className: "sa-empty" }, text));
-  }
+  root.appendChild(h("div", { className: "sa-caption" }, "每个能力都能被流程引用，也能由 agent 通过 relaydeck_* 工具间接驱动。加一个平台 = 注册一组能力，所有流程立刻可用。"));
+  root.appendChild(body);
 
   function refresh() {
     if (disposed) return;
-    api.getAccounts().then(function (res) {
+    api.capabilities().then(function (res) {
       if (disposed) return;
-      var list = res && res.ok && Array.isArray(res.data) ? res.data : [];
-      if (list.length === 0) { status.textContent = ""; showEmpty("暂无账号"); return; }
-      if (!loaded) {
-        loaded = true;
-        select.textContent = "";
-        list.forEach(function (a) {
-          var opt = h("option", { value: String(a.id) }, (a.nickname || ("账号 " + a.id)) + " · " + (a.platform || ""));
-          select.appendChild(opt);
+      clear(body);
+      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
+      if (items.length === 0) { body.appendChild(h("div", { className: "sa-empty" }, "后端没有注册任何能力。")); return; }
+      var groups = { source: [], filter: [], action: [] };
+      items.forEach(function (cap) { (groups[cap.stage] || (groups[cap.stage] = [])).push(cap); });
+      Object.keys(groups).forEach(function (stage) {
+        if (groups[stage].length === 0) return;
+        body.appendChild(h("div", { className: "sa-section-title" }, STAGE_LABEL[stage] || stage));
+        groups[stage].forEach(function (cap) {
+          body.appendChild(h("div", { className: "sa-card" }, [
+            h("div", { className: "sa-row" }, [
+              h("span", { style: { fontWeight: 600 } }, cap.title || cap.id),
+              h("span", { className: "sa-caption" }, cap.id)
+            ]),
+            h("div", { className: "sa-caption" }, cap.description || "")
+          ]));
         });
-        accountId = list[0].id;
-        select.value = String(accountId);
-      }
-      if (accountId === null) return;
-      api.getHubSummary(accountId).then(function (hub) {
-        if (disposed) return;
-        if (!hub || !hub.ok || !hub.data) { status.textContent = "汇总加载失败"; return; }
-        status.textContent = "";
-        cWorks.textContent = String(hub.data.works === undefined ? "-" : hub.data.works);
-        cFollowing.textContent = String(hub.data.following === undefined ? "-" : hub.data.following);
-        cFans.textContent = String(hub.data.fans === undefined ? "-" : hub.data.fans);
-        cDm.textContent = String(hub.data.dm === undefined ? "-" : hub.data.dm);
       });
     });
   }
 
-  function activate() {
-    if (disposed || timer !== null) return;
-    refresh();
-    timer = setInterval(refresh, 10000);
-  }
-  function deactivate() {
-    if (timer === null) return;
-    clearInterval(timer);
-    timer = null;
-  }
-
+  function activate() { if (disposed || timer !== null) return; refresh(); timer = setInterval(refresh, 10000); }
+  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
   return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
 }
 
 
-// ---- lib/panel/views/tasks.js ----
-// 任务队列：只读列表 + 状态筛选。
+// ---- lib/panel/views/dev.js ----
+// 开发调试：重载插件 / 重启宿主 / 重新打包。
+// Reload uses the Host's native remote pluginManager (typert RPC) — no extra route.
+// Pack and restart go through the Host dev routes registered in lib/index.js.
 
-var STATES = ["active", "all", "pending", "running", "blocked", "failed", "completed"];
+var PACK_PATH = "/dsh-relaydeck/dev/pack";
+var RESTART_PATH = "/dsh-relaydeck/dev/restart";
+var PACKAGE_NAME = "dsh-relaydeck";
 
-function renderTasks(ctx) {
-  var api = ctx.api;
-  return renderList(ctx, {
-    description: "统一任务队列（采集 / 发布 / 评论 / 操作 / 下载）。",
-    empty: "当前筛选下没有任务",
-    filters: [{
-      id: "state",
-      value: "active",
-      options: STATES.map(function (s) { return { value: s, label: s }; })
-    }],
-    columns: [
-      { label: "队列", render: function (r) { return r.queue_label || r.queue || "-"; } },
-      { label: "标题", render: function (r) { return r.title || r.detail || "-"; } },
-      { label: "状态", render: function (r) { return r.state || r.status || "-"; } },
-      { label: "时间", render: function (r) { return fmtTime(r.scheduled_at || r.created_at); } }
-    ],
-    load: function (s) { return api.getTasks({ state: s.state, page: 1, pageSize: 20 }); }
-  });
+function renderDev(ctx) {
+  var clientCtx = ctx.clientCtx;
+  var root = h("div", { className: "sa-view" });
+  var status = h("div", { className: "sa-caption" }, "");
+  var log = h("pre", { className: "sa-dev-log" }, "");
+
+  function say(text) { status.textContent = text; }
+  function write(text) { log.textContent = String(text).slice(0, 4000); }
+
+  function remoteManager() {
+    try {
+      if (!clientCtx || !clientCtx.remote) return undefined;
+      return clientCtx.remote.pluginManager;
+    } catch (e) { return undefined; }
+  }
+
+  async function findEntryId() {
+    var manager = remoteManager();
+    if (!manager) return undefined;
+    var listed = await manager.listPlugins();
+    var value = listed && listed.ok ? listed.value : listed;
+    var items = value && (value.plugins || value.items || value);
+    if (!Array.isArray(items)) return undefined;
+    for (var i = 0; i < items.length; i++) {
+      var row = items[i] || {};
+      if (row.packageName === PACKAGE_NAME || row.name === PACKAGE_NAME || row.package === PACKAGE_NAME) {
+        return row.id || row.entryId || row.key;
+      }
+    }
+    for (var k = 0; k < items.length; k++) {
+      var r = items[k] || {};
+      var hay = JSON.stringify(r);
+      if (hay.indexOf(PACKAGE_NAME) >= 0) return r.id || r.entryId || r.key;
+    }
+    return undefined;
+  }
+
+  var reloadBtn = h("button", { type: "button", className: "sa-btn", "data-variant": "primary", onClick: reload }, "重载插件");
+  var restartBtn = h("button", { type: "button", className: "sa-btn", onClick: restart }, "重启宿主");
+  var packBtn = h("button", { type: "button", className: "sa-btn", onClick: pack }, "重新打包");
+
+  async function reload() {
+    var manager = remoteManager();
+    if (!manager) { say("宿主 remote.pluginManager 不可用"); return; }
+    reloadBtn.disabled = true;
+    try {
+      var entryId = await findEntryId();
+      if (!entryId) { say("未在插件列表中找到 " + PACKAGE_NAME); return; }
+      say("正在重载 " + entryId + " …");
+      await manager.setPluginEnabled(entryId, false);
+      var back = await manager.setPluginEnabled(entryId, true);
+      var applied = back && back.ok && back.value ? back.value.application : undefined;
+      say(applied === "restart-required"
+        ? "已提交，但需要重启宿主：" + (back.value.restartReason || "")
+        : "重载已提交" + (applied ? "（" + applied + "）" : ""));
+    } catch (e) {
+      say("重载失败：" + String(e && e.message ? e.message : e));
+    } finally {
+      reloadBtn.disabled = false;
+    }
+  }
+
+  async function restart() {
+    restartBtn.disabled = true;
+    try {
+      say("正在请求重启宿主 …");
+      var res = await fetch(RESTART_PATH, { method: "POST", credentials: "same-origin", headers: { accept: "application/json" } });
+      var body = await res.json();
+      if (body.ok) say("宿主即将重启（窗口会关闭后自动拉起）");
+      else say("未重启：" + (body.hint || body.error || body.reason || res.status));
+      write(JSON.stringify(body, null, 2));
+    } catch (e) {
+      say("重启请求失败：" + String(e && e.message ? e.message : e));
+    } finally {
+      restartBtn.disabled = false;
+    }
+  }
+
+  async function pack() {
+    packBtn.disabled = true;
+    try {
+      say("正在重新打包 …");
+      var res = await fetch(PACK_PATH, { method: "POST", credentials: "same-origin", headers: { accept: "application/json" } });
+      var body = await res.json();
+      if (body.ok) say("打包完成：" + body.name + "@" + body.version + " · " + body.bytes + " B · client.js " + body.clientBytes + " B");
+      else say("打包失败：" + (body.error || res.status));
+      write(JSON.stringify(body, null, 2));
+    } catch (e) {
+      say("打包请求失败：" + String(e && e.message ? e.message : e));
+    } finally {
+      packBtn.disabled = false;
+    }
+  }
+
+  var info = h("div", { className: "sa-caption" }, "读取宿主 dev 配置 …");
+  root.appendChild(info);
+  fetch("/dsh-relaydeck/config", { credentials: "same-origin", headers: { accept: "application/json" } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (cfg) {
+      if (!cfg) { info.textContent = "无法读取宿主配置"; return; }
+      info.textContent = "devMode=" + String(cfg.devMode) + " · allowHostRestart=" + String(cfg.allowHostRestart) + " · 后端端口 " + cfg.port + " · 数据目录 " + cfg.dataDir;
+    })
+    .catch(function () { info.textContent = "无法读取宿主配置"; });
+  root.appendChild(h("div", { className: "sa-caption" }, "开发调试：重载插件走宿主 remote.pluginManager（原生，无需重启）；重新打包在宿主执行 scripts/dev-pack.mjs；重启宿主需在插件配置中开启 allowHostRestart。"));
+  root.appendChild(h("div", { className: "sa-row" }, [reloadBtn, restartBtn, packBtn]));
+  root.appendChild(status);
+  root.appendChild(log);
+
+  return {
+    element: root,
+    activate: function () { say("就绪"); },
+    deactivate: function () {},
+    dispose: function () {}
+  };
 }
 
 
-// ---- lib/panel/views/publish.js ----
-// 发布：只读列表。
+// ---- lib/panel/views/about.js ----
+// 关于 — 版本、许可证、免责声明。
 
-function renderPublish(ctx) {
-  var api = ctx.api;
-  return renderList(ctx, {
-    description: "发布任务与已发布记录。",
-    empty: "暂无发布任务",
-    columns: [
-      { label: "标题", render: function (r) { return r.title || "-"; } },
-      { label: "平台", key: "platform" },
-      { label: "类型", key: "media_type" },
-      { label: "状态", key: "status" },
-      { label: "计划时间", render: function (r) { return fmtTime(r.scheduled_at); } },
-      { label: "结果", render: function (r) { return r.error || r.result_url || "-"; } }
-    ],
-    load: function () { return api.getPublish(); }
-  });
-}
+var DISCLAIMER = "RelayDeck 是独立项目：不包含、不依赖、也不分发任何第三方内容工具的代码或素材。所有平台能力均为本项目自行实现。";
 
-
-// ---- lib/panel/views/auto-comment.js ----
-// 自动评论：规则 + 评论任务两张只读表，共用一个 10 s 轮询。
-
-function renderAutoComment(ctx) {
+function renderAbout(ctx) {
   var api = ctx.api;
   var root = h("div", { className: "sa-view" });
-  var timer = null;
-  var disposed = false;
+  var body = h("div", { className: "sa-list" });
+  root.appendChild(body);
 
-  var rulesBody = h("tbody", null);
-  var tasksBody = h("tbody", null);
-
-  function table(headers, body) {
-    return h("table", { className: "sa-table" }, [
-      h("thead", null, [h("tr", null, headers.map(function (label) { return h("th", null, label); }))]),
-      body
-    ]);
-  }
-
-  function fill(body, res, width, emptyText, cells) {
+  api.health().then(function (res) {
     clear(body);
-    if (!res || res.ok !== true) {
-      body.appendChild(h("tr", null, [h("td", { colSpan: width }, [h("div", { className: "sa-empty" }, "加载失败：" + (res && res.error ? res.error : ""))])]));
-      return;
-    }
-    var items = Array.isArray(res.data) ? res.data : (res.data && Array.isArray(res.data.items) ? res.data.items : []);
-    if (items.length === 0) {
-      body.appendChild(h("tr", null, [h("td", { colSpan: width }, [h("div", { className: "sa-empty" }, emptyText)])]));
-      return;
-    }
-    items.forEach(function (row) {
-      body.appendChild(h("tr", null, cells(row).map(function (value) {
-        return h("td", null, value === undefined || value === null || value === "" ? "-" : String(value));
-      })));
-    });
-  }
-
-  root.appendChild(h("div", { className: "sa-section-title" }, "自动评论规则"));
-  root.appendChild(table(["名称", "模式", "启用", "每日上限"], rulesBody));
-  root.appendChild(h("div", { className: "sa-section-title" }, "评论任务"));
-  root.appendChild(table(["目标", "内容", "状态", "错误", "时间"], tasksBody));
-
-  function refresh() {
-    if (disposed) return;
-    api.getCommentRules().then(function (res) {
-      if (disposed) return;
-      fill(rulesBody, res, 4, "暂无自动评论规则", function (r) {
-        return [r.name || "-", r.mode || "-", r.enabled ? "是" : "否", r.daily_cap];
-      });
-    });
-    api.getCommentTasks().then(function (res) {
-      if (disposed) return;
-      fill(tasksBody, res, 5, "暂无评论任务", function (r) {
-        return [r.target_nick || r.target_comment_id || "-", r.content || "-", r.status || "-", r.error || "-", fmtTime(r.created_at)];
-      });
-    });
-  }
-
-  function activate() {
-    if (disposed || timer !== null) return;
-    refresh();
-    timer = setInterval(refresh, 10000);
-  }
-  function deactivate() {
-    if (timer === null) return;
-    clearInterval(timer);
-    timer = null;
-  }
-
-  return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
-}
-
-
-// ---- lib/panel/views/downloads.js ----
-// 链接下载：只读历史。
-
-function renderDownloads(ctx) {
-  var api = ctx.api;
-  return renderList(ctx, {
-    description: "分享链接解析与下载历史。",
-    empty: "暂无下载记录",
-    columns: [
-      { label: "标题", render: function (r) { return r.title || "-"; } },
-      { label: "平台", key: "platform" },
-      { label: "状态", key: "status" },
-      { label: "媒体数", key: "media_count" },
-      { label: "作者", render: function (r) { return r.author || "-"; } },
-      { label: "时间", render: function (r) { return fmtTime(r.created_at); } }
-    ],
-    load: function () { return api.getShareHistory(); }
+    var data = res.ok && res.data ? res.data : null;
+    body.appendChild(h("div", { className: "sa-card" }, [
+      h("div", { className: "sa-row" }, [h("span", { style: { fontWeight: 600 } }, "RelayDeck")]),
+      h("div", { className: "sa-caption" }, "DSH 原生内容流转工作台 · Flow = 源 → 筛选 → 动作"),
+      h("div", { className: "sa-caption" }, "版本 " + (data ? data.version : "?") + " · API " + (data ? data.api : "?") + " · schema " + (data ? data.schemaVersion : "?"))
+    ]));
+    body.appendChild(h("div", { className: "sa-card" }, [
+      h("div", { className: "sa-row" }, [h("span", { style: { fontWeight: 600 } }, "许可证")]),
+      h("div", { className: "sa-caption" }, "MIT")
+    ]));
+    body.appendChild(h("div", { className: "sa-card" }, [
+      h("div", { className: "sa-row" }, [h("span", { style: { fontWeight: 600 } }, "免责声明")]),
+      h("div", { className: "sa-caption" }, DISCLAIMER)
+    ]));
   });
-}
 
-
-// ---- lib/panel/views/notifications.js ----
-// 通知：只读列表。
-
-function renderNotifications(ctx) {
-  var api = ctx.api;
-  return renderList(ctx, {
-    description: "通知渠道配置。",
-    empty: "暂无通知渠道",
-    columns: [
-      { label: "名称", render: function (r) { return r.name || "-"; } },
-      { label: "类型", key: "type" },
-      { label: "启用", render: function (r) { return r.enabled ? "是" : "否"; } },
-      { label: "创建时间", render: function (r) { return fmtTime(r.created_at); } }
-    ],
-    load: function () { return api.getNotifications(); }
-  });
+  return { element: root, activate: function () {}, deactivate: function () {}, dispose: function () {} };
 }
 
 
 // ---- lib/panel/index.js ----
-// SA Manager panel — native secondary navigation over the CreatorHub menu.
-// One DSH sidebar entry (registered in lib/host/client.js); the twelve views live
-// inside the panel. Polling is owned by each view: activate() on show,
-// deactivate() on hide or switch, dispose() on unmount.
+// RelayDeck panel — native secondary navigation over the product's views.
+// One DSH sidebar entry (registered in lib/host/client.js); the views live here.
+// Polling is owned by each view: activate() on show, deactivate() on hide or
+// switch, dispose() on unmount.
 
 var VIEWS = [
-  { id: "overview", label: "工作概览", render: renderOverview },
-  { id: "accounts", label: "平台账号", render: renderAccounts },
-  { id: "monitors", label: "作品监控", render: renderMonitors },
-  { id: "collections", label: "关键词采集", render: renderCollections },
-  { id: "comment-watches", label: "评论监控", render: renderCommentWatches },
-  { id: "danmaku-watches", label: "弹幕监控", render: renderDanmakuWatches },
-  { id: "account-hub", label: "本账号管理", render: renderAccountHub },
-  { id: "tasks", label: "任务队列", render: renderTasks },
-  { id: "publish", label: "发布", render: renderPublish },
-  { id: "auto-comment", label: "自动评论", render: renderAutoComment },
-  { id: "downloads", label: "链接下载", render: renderDownloads },
-  { id: "notifications", label: "通知", render: renderNotifications }
+  { id: "dashboard", label: "看板", render: renderDashboard },
+  { id: "flows", label: "流程", render: renderFlows },
+  { id: "runs", label: "运行", render: renderRuns },
+  { id: "library", label: "素材", render: renderLibrary },
+  { id: "accounts", label: "账号", render: renderAccounts },
+  { id: "capabilities", label: "能力", render: renderCapabilities },
+  { id: "dev", label: "开发调试", render: renderDev },
+  { id: "about", label: "关于", render: renderAbout }
 ];
 
 function createPanel(host, options) {
@@ -806,11 +759,11 @@ function createPanel(host, options) {
   var main = h("div", { className: "sa-main" });
   var root = h("div", { className: "sa-panel" }, [nav, main]);
 
-  var resolved = null;
+  var config = null;
   var api = null;
   var sessionContext = opts.sessionContext || null;
   var current = null;
-  var activeId = "overview";
+  var activeId = "dashboard";
   var visible = true;
   var disposed = false;
   var buttons = {};
@@ -835,8 +788,8 @@ function createPanel(host, options) {
     clear(main);
     for (var key in buttons) buttons[key].setAttribute("aria-current", key === id ? "true" : "false");
     activeId = id;
-    if (!resolved) {
-      main.appendChild(h("div", { className: "sa-empty" }, "正在读取配置…"));
+    if (!api) {
+      main.appendChild(h("div", { className: "sa-empty" }, "正在连接 RelayDeck 后端…"));
       return;
     }
     var view = null;
@@ -846,9 +799,10 @@ function createPanel(host, options) {
       h: h,
       api: api,
       host: host,
-      resolved: resolved,
+      config: config,
       events: events,
       sessionContext: sessionContext,
+      clientCtx: opts.clientCtx,
       navigate: mountView
     });
     main.appendChild(current.element);
@@ -876,15 +830,15 @@ function createPanel(host, options) {
     if (payload) sessionContext = payload;
   });
 
-  host.resolveBaseUrl().then(function (r) {
+  host.resolveConfig().then(function (cfg) {
     if (disposed) return;
-    resolved = r;
-    api = createApiBridge(r.baseUrl, function (path, opts2) { return host.proxyFetch(path, opts2); });
+    config = cfg;
+    api = createApiBridge(function (path, o) { return host.proxyFetch(path, o); });
     renderNav();
   }).catch(function () {
     if (disposed) return;
-    resolved = { baseUrl: "http://127.0.0.1:8731", source: "default" };
-    api = createApiBridge(resolved.baseUrl, function (path, opts2) { return host.proxyFetch(path, opts2); });
+    config = { port: 18731, baseUrl: "http://127.0.0.1:18731", dataDir: "" };
+    api = createApiBridge(function (path, o) { return host.proxyFetch(path, o); });
     renderNav();
   });
 
@@ -904,68 +858,39 @@ function createPanel(host, options) {
 
 
 // ---- lib/host/bridge.js ----
-// SA Manager host half (browser side) — config resolution, session context,
+// RelayDeck host half (browser side) — config resolution, session context,
 // event forwarding, and the same-origin proxy call.
 //
-// IMPORTANT: this file is bundled into client.js and therefore runs in the
-// RENDERER, not in Node. A direct fetch to 127.0.0.1:8731 from here is a browser
-// request and CreatorHub sends no Access-Control-Allow-Origin, so it fails with
-// "Failed to fetch". Every API read must go through /dsh-samanager/proxy, which
-// the Node half (lib/index.js) registers and forwards.
-var DEFAULT_BASE_URL = "http://127.0.0.1:8731";
-var CONFIG_PATH = "/dsh-samanager/config";
-var PROXY_PATH = "/dsh-samanager/proxy";
-var PANEL_ID = "dsh-samanager";
-var BRIDGE_TIMEOUT_MS = 2000;
-var PROXY_TIMEOUT_MS = 10000;
+// IMPORTANT: this file is bundled into client.js and runs in the RENDERER. A
+// direct fetch to the loopback backend from here would be cross-origin, so every
+// API call goes through /dsh-relaydeck/proxy, which the Node half registers.
+var DEFAULT_PORT = 18731;
+var CONFIG_PATH = "/dsh-relaydeck/config";
+var PROXY_PATH = "/dsh-relaydeck/proxy";
+var PANEL_ID = "dsh-relaydeck";
+var CONFIG_TIMEOUT_MS = 3000;
+var PROXY_TIMEOUT_MS = 15000;
 
-function isLoopback(value) {
-  if (typeof value !== "string" || value.length === 0) return false;
-  try {
-    var host = new URL(value).hostname;
-    return host === "127.0.0.1" || host === "localhost";
-  } catch (e) { return false; }
+/** The proxy is the only way the panel reaches the backend. */
+function isProxyPath(value) {
+  return typeof value === "string" && value.charAt(0) === "/";
 }
 
-function resolveStaticBaseUrl(ctx, config) {
-  var candidates = [];
-  if (config && typeof config.baseUrl === "string") candidates.push(config.baseUrl);
-  try {
-    if (ctx && ctx.config && typeof ctx.config.baseUrl === "string") candidates.push(ctx.config.baseUrl);
-  } catch (e) { /* guarded ctx denies undeclared reads */ }
-  if (ctx && typeof ctx.get === "function") {
-    try {
-      var injected = ctx.get("saManagerConfig");
-      if (injected && typeof injected.baseUrl === "string") candidates.push(injected.baseUrl);
-    } catch (e) { /* optional lookup */ }
-  }
-  for (var i = 0; i < candidates.length; i++) if (isLoopback(candidates[i])) return candidates[i];
-  return undefined;
-}
-
-function fetchBridgeBaseUrl(fetchImpl) {
+function fetchHostConfig(fetchImpl) {
   var doFetch = fetchImpl || fetch;
   try {
     return doFetch(CONFIG_PATH, {
-      signal: AbortSignal.timeout(BRIDGE_TIMEOUT_MS),
+      signal: AbortSignal.timeout(CONFIG_TIMEOUT_MS),
       credentials: "same-origin",
       headers: { accept: "application/json" }
     }).then(function (res) { return res && res.ok ? res.json() : null; })
-      .then(function (json) { return json && typeof json.baseUrl === "string" ? json.baseUrl : undefined; })
-      .catch(function () { return undefined; });
+      .catch(function () { return null; });
   } catch (e) {
-    return Promise.resolve(undefined);
+    return Promise.resolve(null);
   }
 }
 
-function pickBaseUrl(bridgeValue, staticValue) {
-  if (isLoopback(bridgeValue)) return { baseUrl: bridgeValue, source: "host-bridge" };
-  if (isLoopback(staticValue)) return { baseUrl: staticValue, source: "host-config" };
-  return { baseUrl: DEFAULT_BASE_URL, source: "default" };
-}
-
 // Read the host's current session context through the optional uiSession service.
-// Never throws: a missing service or an unexpected shape degrades to { available: false }.
 function getSessionContext(ctx) {
   var fallback = { available: false };
   try {
@@ -976,16 +901,15 @@ function getSessionContext(ctx) {
     if (!snapshot || !snapshot.byId) return fallback;
     var byId = snapshot.byId;
     var ids = Object.keys(byId);
-    if (ids.length === 0) return { available: true, sessionId: null, title: "(无会话)", messageCount: 0, running: false, sessionCount: 0 };
+    if (ids.length === 0) return { available: true, sessionId: null, title: "(无会话)", running: false, sessionCount: 0 };
     var mainId = uiSession.mainRetainId && byId[uiSession.mainRetainId] ? uiSession.mainRetainId : ids[0];
     var session = byId[mainId] || {};
-    var running = session.running === true || session.status === "running";
     return {
       available: true,
       sessionId: session.id || mainId,
       title: session.title || session.name || "(未命名会话)",
-      messageCount: typeof session.messageCount === "number" ? session.messageCount : (typeof session.messages === "number" ? session.messages : undefined),
-      running: running,
+      messageCount: typeof session.messageCount === "number" ? session.messageCount : undefined,
+      running: session.running === true || session.status === "running",
       sessionCount: ids.length
     };
   } catch (e) {
@@ -999,30 +923,37 @@ function createHostBridge(ctx, config) {
     configPath: CONFIG_PATH,
     proxyPath: PROXY_PATH,
 
-    resolveBaseUrl: function () {
-      return fetchBridgeBaseUrl().then(function (bridgeValue) {
-        return pickBaseUrl(bridgeValue, resolveStaticBaseUrl(ctx, config));
+    /** Effective host config (port, data dir, dev flags). */
+    resolveConfig: function () {
+      return fetchHostConfig().then(function (cfg) {
+        return cfg || { port: DEFAULT_PORT, baseUrl: "http://127.0.0.1:" + DEFAULT_PORT, source: "default" };
       });
     },
 
-    // Read-only CreatorHub request forwarded by the Node half. Only /health and
-    // /api/* are allowed; the Host route repeats the same check.
+    /**
+     * Call the RelayDeck backend through the host route. The browser never
+     * touches the loopback port directly.
+     */
     proxyFetch: function (path, options) {
       var opts = options || {};
       var timeoutMs = typeof opts.timeoutMs === "number" ? opts.timeoutMs : PROXY_TIMEOUT_MS;
-      if (typeof path !== "string" || path.charAt(0) !== "/") return Promise.resolve({ ok: false, status: 0, data: null, error: "forbidden" });
+      if (!isProxyPath(path)) return Promise.resolve({ ok: false, status: 0, data: null, error: "forbidden" });
       if (path !== "/health" && path.indexOf("/api/") !== 0) return Promise.resolve({ ok: false, status: 0, data: null, error: "forbidden" });
-      if (opts.method !== undefined && opts.method !== "GET") return Promise.resolve({ ok: false, status: 0, data: null, error: "forbidden" });
       var url = PROXY_PATH + "?path=" + encodeURIComponent(path);
-      return fetch(url, {
-        method: "GET",
+      var init = {
+        method: opts.method || "GET",
         credentials: "same-origin",
         headers: { accept: "application/json" },
         signal: AbortSignal.timeout(timeoutMs)
-      }).then(function (res) {
-        return res.text().then(function (text) {
+      };
+      if (opts.body !== undefined) {
+        init.headers["content-type"] = "application/json";
+        init.body = JSON.stringify(opts.body);
+      }
+      return fetch(url, init).then(function (res) {
+        return res.text().then(function (body) {
           var data = null;
-          if (text.length > 0) { try { data = JSON.parse(text); } catch (e) { data = null; } }
+          if (body.length > 0) { try { data = JSON.parse(body); } catch (e) { data = null; } }
           return { ok: res.ok, status: res.status, data: data };
         });
       }).catch(function (err) {
@@ -1030,18 +961,17 @@ function createHostBridge(ctx, config) {
       });
     },
 
-    // Forward host events to the panel. Returns an unsubscribe that releases every
-    // registration, so the panel can dispose without leaving listeners behind.
+    /** Forward host events to the panel; the returned unsubscribe releases all. */
     subscribe: function (emit) {
       var disposers = [];
-      function emitSafe(name, payload) { try { emit({ name: name, payload: payload }); } catch (e) { /* panel listener errors stay local */ } }
+      function emitSafe(name, payload) { try { emit({ name: name, payload: payload }); } catch (e) { /* listener errors stay local */ } }
 
       try {
         if (ctx && typeof ctx.on === "function") {
           var onReset = ctx.on("connection/reset", function () { emitSafe("connection-reset", {}); });
           if (typeof onReset === "function") disposers.push(onReset);
         }
-      } catch (e) { /* optional event */ }
+      } catch (e) { /* optional */ }
 
       try {
         var uiSession = ctx && typeof ctx.get === "function" ? ctx.get("uiSession") : undefined;
@@ -1049,7 +979,7 @@ function createHostBridge(ctx, config) {
           var offList = uiSession.sessions.list.subscribe(function () { emitSafe("session-context", getSessionContext(ctx)); });
           if (typeof offList === "function") disposers.push(offList);
         }
-      } catch (e) { /* optional service */ }
+      } catch (e) { /* optional */ }
 
       try {
         var remote = ctx && typeof ctx.get === "function" ? ctx.get("remote") : undefined;
@@ -1059,7 +989,7 @@ function createHostBridge(ctx, config) {
           });
           if (typeof offStatus === "function") disposers.push(offStatus);
         }
-      } catch (e) { /* optional service */ }
+      } catch (e) { /* optional */ }
 
       return function unsubscribe() {
         while (disposers.length > 0) {
@@ -1070,7 +1000,6 @@ function createHostBridge(ctx, config) {
     },
 
     openExternal: function (url) {
-      if (!isLoopback(url)) return false;
       try { window.open(url, "_blank", "noopener,noreferrer"); return true; } catch (e) { return false; }
     }
   };
@@ -1081,7 +1010,7 @@ function createHostBridge(ctx, config) {
 // SA Manager host half (browser side) — mounts the native panel into the DSH slot
 // and owns its lifecycle. The bundle's apply() calls mountPanel once.
 
-var PANEL_ID = "dsh-samanager";
+var PANEL_ID = "dsh-relaydeck";
 var cssInjected = false;
 
 function injectCss() {
@@ -1101,13 +1030,12 @@ function SAManagerIcon() {
 }
 
 function mountPanel(ctx, config) {
-  var staticBaseUrl = resolveStaticBaseUrl(ctx, config);
   var host = createHostBridge(ctx, config);
 
   function SAManagerPanel() {
     var ref = React.useRef(null);
     React.useEffect(function () {
-      var panel = createPanel(host, { injectCss: injectCss, sessionContext: getSessionContext(ctx) });
+      var panel = createPanel(host, { injectCss: injectCss, sessionContext: getSessionContext(ctx), clientCtx: ctx });
       if (ref.current) ref.current.appendChild(panel.element);
       return function () { panel.dispose(); };
     }, []);
@@ -1115,29 +1043,26 @@ function mountPanel(ctx, config) {
   }
 
   ctx.slots.inject("sidebar.panellist", function () {
-    return ctx.slots.register({ name: "sidebar.panellist", id: PANEL_ID, order: 50, label: "SA Manager" }, SAManagerIcon);
+    return ctx.slots.register({ name: "sidebar.panellist", id: PANEL_ID, order: 50, label: "RelayDeck" }, SAManagerIcon);
   });
   ctx.slots.inject("main", function () {
     return ctx.slots.register({ name: "main", key: PANEL_ID }, SAManagerPanel);
   });
 
-  return { panelId: PANEL_ID, configPath: host.configPath, staticBaseUrl: staticBaseUrl || null };
+  return { panelId: PANEL_ID, configPath: host.configPath };
 }
 
 
     exports.apply = function (ctx, config) { return mountPanel(ctx, config); };
-    exports.inject = ["slots"];
-    exports.pickBaseUrl = pickBaseUrl;
-    exports.fetchBridgeBaseUrl = fetchBridgeBaseUrl;
-    exports.resolveStaticBaseUrl = resolveStaticBaseUrl;
-    exports.isLoopback = isLoopback;
-    exports.CONFIG_PATH = CONFIG_PATH;
-    exports.DEFAULT_BASE_URL = DEFAULT_BASE_URL;
-    exports.PANEL_ID = PANEL_ID;
+    exports.inject = ["slots", "remote"];
     exports.createHostBridge = createHostBridge;
+    exports.fetchHostConfig = fetchHostConfig;
     exports.getSessionContext = getSessionContext;
     exports.createEventBus = createEventBus;
     exports.createPanel = createPanel;
+    exports.CONFIG_PATH = CONFIG_PATH;
+    exports.PROXY_PATH = PROXY_PATH;
+    exports.PANEL_ID = PANEL_ID;
     return module.exports;
   }
 });

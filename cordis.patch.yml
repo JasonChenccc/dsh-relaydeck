@@ -1,5 +1,7 @@
-# dsh-SAmanager bundle patch: mounts the plugin into a profile's layer stack.
+# dsh-relaydeck bundle patch: mounts the plugin into a profile's layer stack.
 # The plugin row's `id` line intentionally carries no trailing comment.
+# Dev mode turns itself on when the package is loaded through a link;
+# a profile patch can still override `devMode` / `allowHostRestart` by id.
 - insert:
-    - id: dsh-samanager
-      name: 'dsh-SAmanager'
+    - id: dsh-relaydeck
+      name: 'dsh-relaydeck'
