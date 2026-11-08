@@ -211,6 +211,67 @@ export async function verifyBindings(db) {
   return results;
 }
 
+/** 在页面里运行：读取账号主页的统计数字。 */
+function readProfileStats() {
+  const pick = (selector) => {
+    const el = document.querySelector(selector);
+    if (!el) return "";
+    return (el.innerText || "").replace(/\s+/g, " ").trim();
+  };
+  const num = (text) => {
+    const m = String(text || "").match(/([\d.]+)\s*(万|w|W)?/);
+    if (!m) return 0;
+    const n = Number(m[1]);
+    return Number.isFinite(n) ? Math.round(m[2] ? n * 10000 : n) : 0;
+  };
+  const info = pick('[data-e2e="user-info"]');
+  const user = window.userInfoStore && window.userInfoStore.curLoginUserInfo;
+  return {
+    nickname: (user && user.nickname) || "",
+    uid: user && user.uid ? String(user.uid) : "",
+    fans: num(pick('[data-e2e="user-info-fans"]')),
+    following: num(pick('[data-e2e="user-info-follow"]')),
+    likes: num(pick('[data-e2e="user-info-like"]')),
+    works: num(user && user.awemeCount),
+    raw: info.slice(0, 300)
+  };
+}
+
+/**
+ * 逐个已登录平台读取账号统计并落库。只对有实现的平台生效，其余如实返回 unsupported。
+ */
+export async function refreshAccountStats(db) {
+  const supported = { douyin: "https://www.douyin.com/user/self" };
+  const bindings = db.prepare("SELECT * FROM bindings WHERE state = 'active'").all();
+  if (bindings.length === 0) return [];
+  const { cdp } = await ensureBrowser({ headless: false });
+  const results = [];
+  for (const binding of bindings) {
+    const url = supported[binding.platform];
+    if (!url) { results.push({ platform: binding.platform, state: "unsupported" }); continue; }
+    let page = null;
+    try {
+      page = await openPage(cdp, url);
+      const probe = loginProbe(binding.platform);
+      const account = await waitForAccount(page, probe, 18000);
+      if (!account) { results.push({ platform: binding.platform, state: "signed-out" }); continue; }
+      await page.evaluate("window.scrollBy(0, 300)").catch(() => {});
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      const stats = await page.evaluate("(" + readProfileStats.toString() + ")()").catch(() => null);
+      if (!stats) { results.push({ platform: binding.platform, state: "no-stats" }); continue; }
+      db.prepare(
+        "INSERT INTO account_stats (platform, binding_id, nickname, followers, following, works, likes, raw_json, taken_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      ).run(binding.platform, binding.id, stats.nickname || binding.nickname || "", stats.fans || 0, stats.following || 0, stats.works || 0, stats.likes || 0, JSON.stringify(stats), nowIso());
+      results.push({ platform: binding.platform, state: "ok", nickname: stats.nickname, fans: stats.fans, following: stats.following, works: stats.works, likes: stats.likes });
+    } catch (error) {
+      results.push({ platform: binding.platform, state: "error", error: errorText(error) });
+    } finally {
+      if (page) { try { await page.close(); } catch (e) { /* gone */ } }
+    }
+  }
+  return results;
+}
+
 export function listLogins() {
   return [...sessions.values()].map(sessionView);
 }

@@ -38,32 +38,6 @@ async function runFlowById(flowRow, trigger) {
   return executeFlow({ db, spec: flow.spec, flow, trigger: trigger || "schedule", dataDir });
 }
 
-/**
- * First run on a fresh database: plant one runnable flow so the product shows a
- * real result immediately, without a platform login. It stays a normal flow —
- * editable, deletable, and a template for real ones.
- */
-function seedDemoFlow() {
-  const existing = db.prepare("SELECT COUNT(*) AS n FROM flows").get();
-  if (existing && Number(existing.n) > 0) return false;
-  const spec = {
-    source: { capability: "core.demoFeed", params: { count: 6, platform: "douyin" } },
-    filters: [
-      { capability: "core.stat", params: { field: "like_count", op: ">=", value: 1000 } },
-      { capability: "core.dedupe", params: {} }
-    ],
-    actions: [
-      { capability: "core.store", params: {} },
-      { capability: "core.download", params: { limit: 1 } },
-      { capability: "core.publishPlan", params: { target: "xhs", tags: "露营,户外", titleTemplate: "{title}" } }
-    ]
-  };
-  db.prepare("INSERT INTO flows (name, enabled, trigger, cron, spec_json, created_at, updated_at) VALUES (?, 1, 'manual', '', ?, ?, ?)")
-    .run("演示：采集 → 筛选 → 落库 → 下载 → 发布计划", JSON.stringify(spec), nowIso(), nowIso());
-  log("info", "seeded demo flow", {});
-  return true;
-}
-
 const schedulerTickMs = Number(arg("tick", "30000"));
 const handle = createRouter({ db, version: VERSION, startedAt, dataDir, runFlowById, schedulerTickMs });
 
@@ -78,7 +52,6 @@ const server = createServer((req, res) => {
 
 server.listen(port, host, () => {
   log("info", "relaydeck backend ready", { url: "http://" + host + ":" + port, dataDir, version: VERSION, at: nowIso() });
-  seedDemoFlow();
   if (arg("schedule", "1") !== "0") {
     startScheduler({ db, runFlow: runFlowById, tickMs: schedulerTickMs });
   }

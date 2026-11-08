@@ -120,6 +120,16 @@ function createApiBridge(proxy) {
     },
     bindings: function () { return call("GET", "/api/bindings"); },
     verifyBindings: function () { return call("POST", "/api/bindings/verify", {}, 120000); },
+    areaList: function (path) { return call("GET", "/api/" + path); },
+    areaCreate: function (path, body) { return call("POST", "/api/" + path, body); },
+    areaUpdate: function (path, id, body) { return call("PUT", "/api/" + path + "/" + encodeURIComponent(String(id)), body); },
+    areaToggle: function (path, id) { return call("POST", "/api/" + path + "/" + encodeURIComponent(String(id)) + "/toggle", {}); },
+    areaDelete: function (path, id) { return call("DELETE", "/api/" + path + "/" + encodeURIComponent(String(id))); },
+    records: function (kind, limit) { return call("GET", "/api/records?kind=" + encodeURIComponent(kind || "") + "&limit=" + (limit || 100)); },
+    accountStats: function () { return call("GET", "/api/account-stats"); },
+    refreshAccountStats: function () { return call("POST", "/api/account-stats/refresh", {}, 180000); },
+    publishPlans: function () { return call("GET", "/api/publish-plans"); },
+    reviewPlan: function (id, status) { return call("POST", "/api/publish-plans/" + encodeURIComponent(String(id)), { status: status }); },
     platforms: function () { return call("GET", "/api/platforms"); },
     logins: function () { return call("GET", "/api/login"); },
     startLogin: function (platform) { return call("POST", "/api/login", { platform: platform }); },
@@ -130,105 +140,104 @@ function createApiBridge(proxy) {
 }
 
 
-// ---- lib/panel/views/_list.js ----
-// Shared read-only list view: filters + table + empty state + 10 s polling that
-// stops when the view is hidden and resumes when it is activated again.
+// ---- lib/panel/views/_area.js ----
+// 通用板块页：新建 → 列表 → 启停 / 删除。所有数据都来自后端真实行。
 
-function normalize(res) {
-  var data = res && res.data;
-  if (Array.isArray(data)) return data;
-  if (data && Array.isArray(data.items)) return data.items;
-  return [];
-}
-
-function renderList(ctx, config) {
+function renderArea(ctx, config) {
+  var api = ctx.api;
   var root = h("div", { className: "sa-view" });
-  var state = {};
   var timer = null;
   var disposed = false;
+  var state = { draft: {} };
 
-  var controls = h("div", { className: "sa-row" });
-  var summary = h("span", { className: "sa-caption" }, "");
-  var tbody = h("tbody", null);
-  var thead = h("thead", null, [h("tr", null, config.columns.map(function (c) { return h("th", null, c.label); }))]);
-  var table = h("table", { className: "sa-table" }, [thead, tbody]);
+  var status = h("div", { className: "sa-caption" }, "");
+  var list = h("div", { className: "sa-list" });
 
-  (config.filters || []).forEach(function (filter) {
-    if (filter.value !== undefined) state[filter.id] = filter.value;
-    var select = h("select", {
-      className: "sa-btn",
-      onChange: function (e) { state[filter.id] = e.target.value; refresh(); }
-    });
-    (filter.options || []).forEach(function (option) {
-      var opt = h("option", { value: option.value }, option.label);
-      if (state[filter.id] === option.value) opt.setAttribute("selected", "selected");
-      select.appendChild(opt);
-    });
-    controls.appendChild(select);
+  root.appendChild(h("div", { className: "sa-section-title" }, config.title));
+  if (config.description) root.appendChild(h("div", { className: "sa-muted" }, config.description));
+
+  // 新建区
+  var form = h("div", { className: "sa-subcard" }, [h("div", { className: "sa-media-title" }, "新建")]);
+  var fields = h("div", { className: "sa-checks" });
+  (config.fields || []).forEach(function (field) {
+    var input;
+    if (field.type === "select") {
+      input = h("select", { className: "sa-btn" });
+      (field.options || []).forEach(function (opt) { input.appendChild(h("option", { value: opt.value }, opt.label)); });
+    } else if (field.type === "textarea") {
+      input = h("textarea", { className: "sa-textarea", style: { minHeight: "60px" }, placeholder: field.placeholder || "" });
+    } else {
+      input = h("input", { className: "sa-input", type: field.type || "text", placeholder: field.placeholder || "", style: { width: field.width || "180px" } });
+    }
+    if (field.value !== undefined) input.value = field.value;
+    input.addEventListener("input", function () { state.draft[field.key] = input.value; });
+    input.addEventListener("change", function () { state.draft[field.key] = input.value; });
+    state.draft[field.key] = input.value;
+    fields.appendChild(h("label", { className: "sa-check" }, [h("span", { className: "sa-caption" }, field.label), input]));
   });
+  var createBtn = h("button", { type: "button", className: "sa-btn", "data-variant": "primary", onClick: create }, "创建");
+  form.appendChild(fields);
+  form.appendChild(h("div", { className: "sa-row" }, [createBtn, status]));
+  if (config.note) form.appendChild(h("div", { className: "sa-warn" }, config.note));
+  root.appendChild(form);
 
-  var refreshBtn = h("button", { type: "button", className: "sa-btn", onClick: refresh }, "刷新");
-  controls.appendChild(refreshBtn);
-  controls.appendChild(summary);
-  root.appendChild(controls);
-  if (config.description) root.appendChild(h("div", { className: "sa-caption" }, config.description));
-  root.appendChild(table);
+  root.appendChild(h("div", { className: "sa-section-title" }, "列表"));
+  root.appendChild(list);
 
-  function showEmpty(text) {
-    clear(tbody);
-    tbody.appendChild(h("tr", null, [
-      h("td", { colSpan: config.columns.length }, [h("div", { className: "sa-empty" }, text)])
-    ]));
+  function payload() {
+    var out = {};
+    (config.fields || []).forEach(function (field) {
+      var value = state.draft[field.key];
+      if (field.type === "number") out[field.key] = Number(value) || 0;
+      else out[field.key] = value === undefined ? "" : value;
+    });
+    return out;
   }
+
+  async function create() {
+    createBtn.disabled = true;
+    try {
+      var res = await api.areaCreate(config.path, payload());
+      status.textContent = res.ok ? "已创建 ✓" : ("创建失败：" + (res.error || res.status));
+      if (res.ok) refresh();
+    } finally { createBtn.disabled = false; }
+  }
+
+  async function toggle(id) { await api.areaToggle(config.path, id); refresh(); }
+  async function remove(id) { await api.areaDelete(config.path, id); refresh(); }
 
   function refresh() {
     if (disposed) return;
-    refreshBtn.disabled = true;
-    Promise.resolve(config.load(state)).then(function (res) {
+    api.areaList(config.path).then(function (res) {
       if (disposed) return;
-      refreshBtn.disabled = false;
-      if (!res || res.ok !== true) {
-        summary.textContent = "";
-        showEmpty((res && res.error) ? ("加载失败：" + res.error) : "加载失败");
-        return;
-      }
-      var items = normalize(res);
-      summary.textContent = "共 " + items.length + " 条";
-      if (items.length === 0) { showEmpty(config.empty || "暂无数据"); return; }
-      clear(tbody);
+      clear(list);
+      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
+      if (!res.ok) { list.appendChild(h("div", { className: "sa-empty" }, "读取失败：" + (res.error || res.status))); return; }
+      if (items.length === 0) { list.appendChild(h("div", { className: "sa-empty" }, "还没有条目 —— 用上面的表单建一条。")); return; }
       items.forEach(function (row) {
-        var cells = config.columns.map(function (column) {
-          var value = column.render ? column.render(row) : row[column.key];
-          var text = value === undefined || value === null || value === "" ? "-" : String(value);
-          return h("td", null, text);
-        });
-        tbody.appendChild(h("tr", null, cells));
+        var title = row[config.titleKey] || row.name || row.title || ("#" + row.id);
+        var sub = (config.subtitle || function (r) { return ""; })(row);
+        var toggleBtn = h("button", { type: "button", className: "sa-btn", onClick: function () { toggle(row.id); } }, row.enabled ? "停用" : "启用");
+        list.appendChild(h("div", { className: "sa-list-row" }, [
+          h("div", { className: "sa-row" }, [
+            h("span", { className: "sa-dot", "data-state": row.enabled ? "online" : "idle" }),
+            h("span", { style: { flex: 1, fontWeight: 600 } }, title),
+            h("span", { className: "sa-chip" }, row.platform || config.path),
+            row.items ? h("span", { className: "sa-chip is-ok" }, "采集 " + row.items) : null,
+            h("span", { className: "sa-caption" }, row.last_scan_at ? fmtTime(row.last_scan_at) : "未运行"),
+            toggleBtn,
+            h("button", { type: "button", className: "sa-btn", onClick: function () { remove(row.id); } }, "删除")
+          ]),
+          sub ? h("div", { className: "sa-caption" }, sub) : null,
+          row.last_error ? h("div", { className: "sa-warn" }, row.last_error) : null
+        ]));
       });
-    }).catch(function (err) {
-      if (disposed) return;
-      refreshBtn.disabled = false;
-      summary.textContent = "";
-      showEmpty("加载失败：" + String(err && err.message ? err.message : err));
     });
   }
 
-  function activate() {
-    if (disposed || timer !== null) return;
-    refresh();
-    timer = setInterval(refresh, 10000);
-  }
-  function deactivate() {
-    if (timer === null) return;
-    clearInterval(timer);
-    timer = null;
-  }
-
-  return {
-    element: root,
-    activate: activate,
-    deactivate: deactivate,
-    dispose: function () { disposed = true; deactivate(); }
-  };
+  function activate() { if (disposed || timer !== null) return; refresh(); timer = setInterval(refresh, 10000); }
+  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
+  return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
 }
 
 
@@ -372,373 +381,6 @@ function renderDashboard(ctx) {
       while (disposers.length > 0) { try { disposers.pop()(); } catch (e) { /* gone */ } }
     }
   };
-}
-
-
-// ---- lib/panel/views/flows.js ----
-// 流程 — 表单式构建器：选数据源 → 勾筛选 → 勾动作。用户不需要看到任何 JSON。
-
-var TARGETS = [
-  { value: "douyin", label: "抖音" },
-  { value: "xhs", label: "小红书" },
-  { value: "kuaishou", label: "快手" },
-  { value: "shipinhao", label: "视频号" },
-  { value: "tiktok", label: "TikTok" }
-];
-
-var SOURCE_LABEL = {
-  "core.demoFeed": "演示数据源（不用登录）",
-  "douyin.search": "抖音 · 关键词搜索",
-  "xhs.search": "小红书 · 关键词搜索",
-  "kuaishou.search": "快手 · 关键词搜索",
-  "shipinhao.search": "视频号 · 关键词搜索",
-  "tiktok.search": "TikTok · 关键词搜索"
-};
-
-/** Turn a saved spec into one readable sentence for the flow list. */
-function describeSpec(spec) {
-  var parts = [];
-  var src = (spec && spec.source) || {};
-  var srcLabel = SOURCE_LABEL[src.capability] || src.capability;
-  var srcParams = src.params || {};
-  if (srcParams.query) srcLabel += "「" + srcParams.query + "」";
-  parts.push(srcLabel);
-  (spec && spec.filters ? spec.filters : []).forEach(function (f) {
-    var q = f.params || {};
-    if (f.capability === "core.stat") parts.push((q.field === "like_count" ? "点赞" : q.field) + " " + q.op + " " + q.value);
-    else if (f.capability === "core.dedupe") parts.push("去重");
-    else if (f.capability === "core.limit") parts.push("最多 " + q.count + " 条");
-    else if (f.capability === "core.contains") parts.push("文本筛选");
-  });
-  (spec && spec.actions ? spec.actions : []).forEach(function (a) {
-    var q = a.params || {};
-    if (a.capability === "core.store") parts.push("存入素材库");
-    else if (a.capability === "core.download") parts.push("下载媒体");
-    else if (a.capability === "core.publishPlan") {
-      var t = TARGETS.filter(function (x) { return x.value === q.target; })[0];
-      parts.push("生成发布草稿 → " + (t ? t.label : q.target));
-    } else if (a.capability === "core.notify") parts.push("通知");
-  });
-  return parts.join(" → ");
-}
-
-function renderFlows(ctx) {
-  var api = ctx.api;
-  var root = h("div", { className: "sa-view" });
-  var timer = null;
-  var disposed = false;
-  var sources = [];
-
-  // ── builder ──
-  var nameInput = h("input", { className: "sa-input", placeholder: "给这条流程起个名字，例如：抖音露营热门" });
-  var sourceSelect = h("select", { className: "sa-btn" });
-  var queryInput = h("input", { className: "sa-input", placeholder: "搜索关键词，例如 露营" });
-  var countInput = h("input", { className: "sa-input", type: "number", value: "20", min: "1" });
-  var sourceExtra = h("div", { className: "sa-row-inline" });
-
-  var statCheck = h("input", { type: "checkbox" });
-  statCheck.checked = true;
-  var statValue = h("input", { className: "sa-input", type: "number", value: "1000", min: "0", style: { width: "110px" } });
-  var dedupeCheck = h("input", { type: "checkbox" });
-  dedupeCheck.checked = true;
-  var limitCheck = h("input", { type: "checkbox" });
-  var limitValue = h("input", { className: "sa-input", type: "number", value: "20", min: "1", style: { width: "90px" } });
-
-  var storeCheck = h("input", { type: "checkbox" });
-  storeCheck.checked = true;
-  var downloadCheck = h("input", { type: "checkbox" });
-  downloadCheck.checked = true;
-  var planCheck = h("input", { type: "checkbox" });
-  var planTarget = h("select", { className: "sa-btn" });
-  TARGETS.forEach(function (t) { var o = h("option", { value: t.value }, t.label); if (t.value === "xhs") o.setAttribute("selected", "selected"); planTarget.appendChild(o); });
-  var planTags = h("input", { className: "sa-input", placeholder: "标签，逗号分隔", style: { width: "180px" } });
-
-  var buildStatus = h("div", { className: "sa-caption" }, "");
-  var createBtn = h("button", { type: "button", className: "sa-btn", "data-variant": "primary", onClick: create }, "创建流程");
-  var list = h("div", { className: "sa-grid" });
-
-  function syncSourceFields() {
-    clear(sourceExtra);
-    var caps = sourceSelect.value;
-    if (caps === "core.demoFeed") {
-      sourceExtra.appendChild(h("span", { className: "sa-caption" }, "条数"));
-      sourceExtra.appendChild(countInput);
-    } else {
-      sourceExtra.appendChild(h("span", { className: "sa-caption" }, "关键词"));
-      sourceExtra.appendChild(queryInput);
-      sourceExtra.appendChild(h("span", { className: "sa-caption" }, "最多"));
-      sourceExtra.appendChild(countInput);
-      sourceExtra.appendChild(h("span", { className: "sa-caption" }, "条"));
-    }
-  }
-
-  sourceSelect.addEventListener("change", syncSourceFields);
-
-  root.appendChild(h("div", { className: "sa-section-title" }, "新建流程"));
-  root.appendChild(h("div", { className: "sa-form" }, [
-    h("div", { className: "sa-field" }, [h("label", null, "名称"), nameInput]),
-    h("div", { className: "sa-subcard" }, [
-      h("div", { className: "sa-media-title" }, "① 数据源"),
-      h("div", { className: "sa-field" }, [h("label", null, "从哪里取内容"), sourceSelect]),
-      h("div", { className: "sa-field" }, [sourceExtra])
-    ]),
-    h("div", { className: "sa-subcard" }, [
-      h("div", { className: "sa-media-title" }, "② 筛选（可选）"),
-      h("div", { className: "sa-checks" }, [
-        h("label", { className: "sa-check" }, [statCheck, "点赞数不低于"]), statValue,
-        h("label", { className: "sa-check" }, [dedupeCheck, "排除已采集过的"]),
-        h("label", { className: "sa-check" }, [limitCheck, "最多保留"]), limitValue
-      ])
-    ]),
-    h("div", { className: "sa-subcard" }, [
-      h("div", { className: "sa-media-title" }, "③ 要做什么"),
-      h("div", { className: "sa-checks" }, [
-        h("label", { className: "sa-check" }, [storeCheck, "存入素材库"]),
-        h("label", { className: "sa-check" }, [downloadCheck, "下载媒体文件"]),
-        h("label", { className: "sa-check" }, [planCheck, "生成发布草稿到"]), planTarget, planTags
-      ])
-    ]),
-    h("div", { className: "sa-row-inline" }, [createBtn, buildStatus])
-  ]));
-
-  root.appendChild(h("div", { className: "sa-section-title" }, "我的流程"));
-  root.appendChild(list);
-
-  function buildSpec() {
-    var cap = sourceSelect.value;
-    var params = cap === "core.demoFeed"
-      ? { count: Number(countInput.value) || 6, platform: "douyin" }
-      : { query: queryInput.value.trim(), limit: Number(countInput.value) || 20 };
-    var spec = { source: { capability: cap, params: params }, filters: [], actions: [] };
-    if (statCheck.checked) spec.filters.push({ capability: "core.stat", params: { field: "like_count", op: ">=", value: Number(statValue.value) || 0 } });
-    if (dedupeCheck.checked) spec.filters.push({ capability: "core.dedupe", params: {} });
-    if (limitCheck.checked) spec.filters.push({ capability: "core.limit", params: { count: Number(limitValue.value) || 20 } });
-    if (storeCheck.checked) spec.actions.push({ capability: "core.store", params: {} });
-    if (downloadCheck.checked) spec.actions.push({ capability: "core.download", params: { limit: 1 } });
-    if (planCheck.checked) spec.actions.push({ capability: "core.publishPlan", params: { target: planTarget.value, tags: planTags.value, titleTemplate: "{title}" } });
-    return spec;
-  }
-
-  async function create() {
-    var spec = buildSpec();
-    if (spec.source.capability !== "core.demoFeed" && !spec.source.params.query) {
-      buildStatus.textContent = "请填写搜索关键词";
-      return;
-    }
-    if (spec.actions.length === 0) { buildStatus.textContent = "至少勾一个动作"; return; }
-    createBtn.disabled = true;
-    try {
-      var res = await api.createFlow({
-        name: nameInput.value.trim() || describeSpec(spec).slice(0, 40),
-        spec: spec
-      });
-      buildStatus.textContent = res.ok ? "已创建 ✓" : ("创建失败：" + (res.error || res.status));
-      if (res.ok) { nameInput.value = ""; refresh(); }
-    } finally { createBtn.disabled = false; }
-  }
-
-  async function runFlow(id, button) {
-    button.disabled = true;
-    button.textContent = "运行中…";
-    try {
-      var res = await api.runFlow(id);
-      var r = res.ok && res.data ? res.data : null;
-      buildStatus.textContent = r
-        ? ("运行完成：发现 " + r.found + " · 保留 " + r.kept + " · 写入 " + r.saved)
-        : ("运行失败：" + (res.error || res.status));
-      refresh();
-    } finally { button.disabled = false; button.textContent = "运行"; }
-  }
-
-  async function removeFlow(id) {
-    await api.deleteFlow(id);
-    refresh();
-  }
-
-  function refresh() {
-    if (disposed) return;
-    api.flows().then(function (res) {
-      if (disposed) return;
-      clear(list);
-      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
-      if (items.length === 0) { list.appendChild(h("div", { className: "sa-empty" }, "还没有流程 —— 用上面的表单建一条。")); return; }
-      items.forEach(function (flow) {
-        var runBtn = h("button", { type: "button", className: "sa-btn", "data-variant": "primary", onClick: function () { runFlow(flow.id, runBtn); } }, "运行");
-        list.appendChild(h("div", { className: "sa-platform" + (flow.last_state === "ok" ? " is-bound" : "") }, [
-          h("div", { className: "sa-platform-head" }, [
-            h("span", { className: "sa-dot", "data-state": flow.last_state === "ok" ? "online" : (flow.last_state === "failed" ? "offline" : "idle") }),
-            h("span", { className: "sa-platform-name" }, flow.name)
-          ]),
-          h("div", { className: "sa-platform-body" }, describeSpec(flow.spec)),
-          h("div", { className: "sa-caption" }, flow.last_run_at ? ("上次运行 " + fmtTime(flow.last_run_at)) : "还没运行过"),
-          h("div", { className: "sa-platform-foot" }, [runBtn, h("button", { type: "button", className: "sa-btn", onClick: function () { removeFlow(flow.id); } }, "删除")])
-        ]));
-      });
-    });
-  }
-
-  function loadSources() {
-    return api.capabilities().then(function (res) {
-      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
-      sources = items.filter(function (c) { return c.stage === "source"; });
-      clear(sourceSelect);
-      sources.forEach(function (c) {
-        sourceSelect.appendChild(h("option", { value: c.id }, SOURCE_LABEL[c.id] || c.title || c.id));
-      });
-      syncSourceFields();
-    });
-  }
-
-  function activate() {
-    if (disposed || timer !== null) return;
-    loadSources().then(refresh);
-    timer = setInterval(refresh, 10000);
-  }
-  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
-  return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
-}
-
-
-// ---- lib/panel/views/runs.js ----
-// 运行 — 时间线视图：每次运行展开成可视化的步骤。
-
-var STAGE_LABEL = { source: "取内容", filter: "筛选", action: "执行" };
-
-function renderRuns(ctx) {
-  var api = ctx.api;
-  var root = h("div", { className: "sa-view" });
-  var timer = null;
-  var disposed = false;
-  var list = h("div", { className: "sa-list" });
-  var expanded = null;
-
-  root.appendChild(h("div", { className: "sa-section-title" }, "运行历史"));
-  root.appendChild(list);
-
-  function stepsFor(run) {
-    var box = h("div", { className: "sa-steps" });
-    (run.steps || []).forEach(function (step) {
-      box.appendChild(h("div", { className: "sa-step" }, [
-        h("span", { className: "sa-step-dot" + (step.state === "ok" ? " is-ok" : " is-bad") }),
-        h("div", { className: "sa-step-main" }, [
-          h("div", { className: "sa-step-title" }, (STAGE_LABEL[step.stage] || step.stage) + " · " + step.capability),
-          h("div", { className: "sa-caption" }, "进入 " + step.in_count + " 条 → 产出 " + step.out_count + " 条" + (step.detail ? " · " + step.detail : "")),
-          step.error ? h("div", { className: "sa-warn" }, step.error) : null
-        ])
-      ]));
-    });
-    return box;
-  }
-
-  async function toggle(id, card) {
-    if (expanded === id) { expanded = null; refresh(); return; }
-    expanded = id;
-    var res = await api.run(id);
-    var holder = card.querySelector("[data-detail]");
-    if (holder && res.ok && res.data) { clear(holder); holder.appendChild(stepsFor(res.data)); }
-  }
-
-  function refresh() {
-    if (disposed) return;
-    api.runs(30).then(function (res) {
-      if (disposed) return;
-      clear(list);
-      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
-      if (items.length === 0) { list.appendChild(h("div", { className: "sa-empty" }, "还没有运行记录。")); return; }
-      items.forEach(function (run) {
-        var detail = h("div", { "data-detail": "" });
-        var card = h("div", { className: "sa-platform" }, [
-          h("div", { className: "sa-platform-head" }, [
-            h("span", { className: "sa-dot", "data-state": run.state === "ok" ? "online" : (run.state === "failed" ? "offline" : "idle") }),
-            h("span", { className: "sa-platform-name" }, "#" + run.id + " " + (run.flow_name || "")),
-            h("span", { className: "sa-chip" }, "发现 " + run.found),
-            h("span", { className: "sa-chip is-ok" }, "写入 " + run.saved),
-            h("span", { className: "sa-caption" }, fmtTime(run.started_at)),
-            h("button", { type: "button", className: "sa-btn", onClick: function () { toggle(run.id, card); } }, expanded === run.id ? "收起" : "查看步骤")
-          ]),
-          run.error ? h("div", { className: "sa-warn" }, run.error) : null,
-          detail
-        ]);
-        list.appendChild(card);
-        if (expanded === run.id) {
-          api.run(run.id).then(function (full) {
-            if (disposed || !full.ok || !full.data) return;
-            clear(detail);
-            detail.appendChild(stepsFor(full.data));
-          });
-        }
-      });
-    });
-  }
-
-  function activate() { if (disposed || timer !== null) return; refresh(); timer = setInterval(refresh, 10000); }
-  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
-  return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
-}
-
-
-// ---- lib/panel/views/library.js ----
-// 素材 — 缩略图卡片墙，不是表格。
-
-function metric(statsJson, key) {
-  try { var s = JSON.parse(statsJson || "{}"); return Number(s[key] || 0); } catch (e) { return 0; }
-}
-
-function renderLibrary(ctx) {
-  var api = ctx.api;
-  var root = h("div", { className: "sa-view" });
-  var timer = null;
-  var disposed = false;
-
-  var toolbar = h("div", { className: "sa-row" });
-  var count = h("span", { className: "sa-caption" }, "");
-  var refreshBtn = h("button", { type: "button", className: "sa-btn", onClick: refresh }, "刷新");
-  toolbar.appendChild(refreshBtn);
-  toolbar.appendChild(count);
-  root.appendChild(toolbar);
-
-  var grid = h("div", { className: "sa-grid" });
-  root.appendChild(grid);
-
-  function refresh() {
-    if (disposed) return;
-    refreshBtn.disabled = true;
-    api.artifacts(200).then(function (res) {
-      if (disposed) return;
-      refreshBtn.disabled = false;
-      clear(grid);
-      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
-      count.textContent = "共 " + items.length + " 条";
-      if (items.length === 0) {
-        grid.appendChild(h("div", { className: "sa-empty" }, "素材库还是空的 —— 到「流程」页跑一条流程试试。"));
-        return;
-      }
-      items.forEach(function (item) {
-        var cover = item.cover_url && item.cover_url.length > 0 && !item.cover_url.startsWith("data:image/png;base64,iVBOR")
-          ? h("img", { className: "sa-thumb", src: item.cover_url, alt: "", loading: "lazy", onError: function (e) { e.target.style.display = "none"; } })
-          : h("div", { className: "sa-thumb-empty" }, item.platform);
-        var liked = metric(item.stats_json, "like_count");
-        grid.appendChild(h("div", { className: "sa-media-card" }, [
-          cover,
-          h("div", { className: "sa-media-body" }, [
-            h("div", { className: "sa-media-title" }, item.title || item.item_id),
-            h("div", { className: "sa-media-meta" }, [
-              h("span", { className: "sa-chip" }, item.platform),
-              item.author ? h("span", null, item.author) : null,
-              liked > 0 ? h("span", null, "♥ " + liked) : null,
-              h("span", { className: "sa-chip" + (item.download_state === "done" ? " is-ok" : "") },
-                item.download_state === "done" ? "已下载" : "未下载")
-            ]),
-            h("div", { className: "sa-caption" }, fmtTime(item.collected_at))
-          ])
-        ]));
-      });
-    });
-  }
-
-  function activate() { if (disposed || timer !== null) return; refresh(); timer = setInterval(refresh, 10000); }
-  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
-  return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
 }
 
 
@@ -945,42 +587,336 @@ function renderAccounts(ctx) {
 }
 
 
-// ---- lib/panel/views/capabilities.js ----
-// 能力 — agent 与流程可用的动作面，按阶段分组。
+// ---- lib/panel/views/monitors.js ----
+// 作品监控 — 盯住创作者，按间隔采集新作品。
 
-var STAGE_LABEL = { source: "源（产出条目）", filter: "筛选（收窄条目）", action: "动作（消费条目）" };
+function renderMonitors(ctx) {
+  return renderArea(ctx, {
+    path: "monitors",
+    title: "作品监控",
+    description: "盯住指定创作者，按间隔采集新作品。",
+    titleKey: "name",
+    note: "采集能力：抖音已支持主页作品读取；其余平台的监控采集尚未接入。",
+    fields: [
+      { key: "platform", label: "平台", type: "select", options: [{"value":"douyin","label":"抖音"},{"value":"xhs","label":"小红书"},{"value":"kuaishou","label":"快手"},{"value":"shipinhao","label":"视频号"},{"value":"tiktok","label":"TikTok"}] },
+      { key: "kind", label: "类型", type: "select", options: [{ value: "creator", label: "创作者" }, { value: "keyword", label: "关键词" }] },
+      { key: "name", label: "名称", placeholder: "备注名，例如 露营小李" },
+      { key: "ref", label: "标识/关键词", placeholder: "主页链接或关键词" },
+      { key: "interval_seconds", label: "间隔(秒)", type: "number", value: "3600", width: "110px" }
+    ],
+    subtitle: function (r) { return (r.kind === "keyword" ? "关键词：" : "目标：") + (r.ref || "-") + " · 每 " + r.interval_seconds + " 秒"; }
+  });
+}
 
-function renderCapabilities(ctx) {
+
+// ---- lib/panel/views/collections.js ----
+// 关键词采集 — 按关键词在平台上采集内容。
+
+var PLATFORMS = [
+  { value: "douyin", label: "抖音" }, { value: "xhs", label: "小红书" },
+  { value: "kuaishou", label: "快手" }, { value: "shipinhao", label: "视频号" }, { value: "tiktok", label: "TikTok" }
+];
+
+function renderCollections(ctx) {
   var api = ctx.api;
   var root = h("div", { className: "sa-view" });
   var timer = null;
   var disposed = false;
-  var body = h("div", { className: "sa-list" });
 
-  root.appendChild(h("div", { className: "sa-caption" }, "每个能力都能被流程引用，也能由 agent 通过 relaydeck_* 工具间接驱动。加一个平台 = 注册一组能力，所有流程立刻可用。"));
-  root.appendChild(body);
+  var platform = h("select", { className: "sa-btn" });
+  PLATFORMS.forEach(function (x) { platform.appendChild(h("option", { value: x.value }, x.label)); });
+  var keyword = h("input", { className: "sa-input", placeholder: "关键词，例如 露营", style: { width: "200px" } });
+  var limit = h("input", { className: "sa-input", type: "number", value: "20", min: "1", style: { width: "90px" } });
+  var createBtn = h("button", { type: "button", className: "sa-btn", "data-variant": "primary", onClick: create }, "开始采集");
+  var status = h("div", { className: "sa-caption" }, "");
+  var list = h("div", { className: "sa-list" });
+
+  root.appendChild(h("div", { className: "sa-section-title" }, "关键词采集"));
+  root.appendChild(h("div", { className: "sa-muted" }, "按关键词在平台上采集内容，结果进入素材库。每个关键词保存为一条可重复运行的采集任务。"));
+  root.appendChild(h("div", { className: "sa-row" }, [platform, keyword, h("span", { className: "sa-caption" }, "条数"), limit, createBtn]));
+  root.appendChild(status);
+  root.appendChild(h("div", { className: "sa-section-title" }, "采集任务"));
+  root.appendChild(list);
+
+  root.appendChild(h("div", { className: "sa-section-title" }, "采集结果"));
+  var resultInfo = h("div", { className: "sa-caption" }, "");
+  var resultGrid = h("div", { className: "sa-grid" });
+  root.appendChild(resultInfo);
+  root.appendChild(resultGrid);
+
+  function isSearchFlow(flow) {
+    var cap = flow && flow.spec && flow.spec.source ? flow.spec.source.capability : "";
+    return /\.search$/.test(cap);
+  }
+
+  async function create() {
+    var query = keyword.value.trim();
+    if (!query) { status.textContent = "请填写关键词"; return; }
+    createBtn.disabled = true;
+    try {
+      var res = await api.createFlow({
+        name: platform.options[platform.selectedIndex].text + " 采集：" + query,
+        spec: {
+          source: { capability: platform.value + ".search", params: { query: query, limit: Number(limit.value) || 20 } },
+          filters: [{ capability: "core.dedupe", params: {} }],
+          actions: [{ capability: "core.store", params: {} }]
+        }
+      });
+      status.textContent = res.ok ? "已创建 ✓" : ("创建失败：" + (res.error || res.status));
+      if (res.ok) { keyword.value = ""; refresh(); }
+    } finally { createBtn.disabled = false; }
+  }
+
+  async function run(id, button) {
+    button.disabled = true; button.textContent = "采集中…";
+    try {
+      var res = await api.runFlow(id);
+      var r = res.ok && res.data ? res.data : null;
+      status.textContent = r ? ("采集完成：发现 " + r.found + " · 新增 " + r.kept + " · 入库 " + r.saved) : ("采集失败：" + (res.error || res.status) + (res.data && res.data.error ? " — " + res.data.error : ""));
+      refresh();
+    } finally { button.disabled = false; button.textContent = "采集"; }
+  }
 
   function refresh() {
     if (disposed) return;
-    api.capabilities().then(function (res) {
+    api.flows().then(function (res) {
       if (disposed) return;
-      clear(body);
+      clear(list);
+      var flows = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items.filter(isSearchFlow) : [];
+      if (flows.length === 0) { list.appendChild(h("div", { className: "sa-empty" }, "还没有采集任务。")); return; }
+      flows.forEach(function (flow) {
+        var query = flow.spec.source.params && flow.spec.source.params.query || "";
+        var btn = h("button", { type: "button", className: "sa-btn", "data-variant": "primary", onClick: function () { run(flow.id, btn); } }, "采集");
+        list.appendChild(h("div", { className: "sa-list-row" }, [
+          h("div", { className: "sa-row" }, [
+            h("span", { className: "sa-dot", "data-state": flow.last_state === "ok" ? "online" : (flow.last_state === "failed" ? "offline" : "idle") }),
+            h("span", { style: { flex: 1, fontWeight: 600 } }, flow.name),
+            h("span", { className: "sa-chip" }, query),
+            h("span", { className: "sa-caption" }, flow.last_run_at ? fmtTime(flow.last_run_at) : "未运行"),
+            btn,
+            h("button", { type: "button", className: "sa-btn", onClick: function () { api.deleteFlow(flow.id).then(refresh); } }, "删除")
+          ]),
+          flow.last_state === "failed" ? h("div", { className: "sa-warn" }, "上次失败") : null
+        ]));
+      });
+    });
+  }
+
+  function loadResults() {
+    if (disposed) return;
+    api.artifacts(200).then(function (res) {
+      if (disposed) return;
+      clear(resultGrid);
       var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
-      if (items.length === 0) { body.appendChild(h("div", { className: "sa-empty" }, "后端没有注册任何能力。")); return; }
-      var groups = { source: [], filter: [], action: [] };
-      items.forEach(function (cap) { (groups[cap.stage] || (groups[cap.stage] = [])).push(cap); });
-      Object.keys(groups).forEach(function (stage) {
-        if (groups[stage].length === 0) return;
-        body.appendChild(h("div", { className: "sa-section-title" }, STAGE_LABEL[stage] || stage));
-        groups[stage].forEach(function (cap) {
-          body.appendChild(h("div", { className: "sa-card" }, [
-            h("div", { className: "sa-row" }, [
-              h("span", { style: { fontWeight: 600 } }, cap.title || cap.id),
-              h("span", { className: "sa-caption" }, cap.id)
-            ]),
-            h("div", { className: "sa-caption" }, cap.description || "")
-          ]));
-        });
+      resultInfo.textContent = "共 " + items.length + " 条";
+      if (items.length === 0) { resultGrid.appendChild(h("div", { className: "sa-empty" }, "还没有采集结果。")); return; }
+      items.slice(0, 60).forEach(function (item) {
+        var cover = item.cover_url
+          ? h("img", { className: "sa-thumb", src: item.cover_url, alt: "", loading: "lazy", onError: function (e) { e.target.style.display = "none"; } })
+          : h("div", { className: "sa-thumb-empty" }, item.platform);
+        var likes = 0;
+        try { likes = Number(JSON.parse(item.stats_json || "{}").like_count || 0); } catch (e) {}
+        resultGrid.appendChild(h("div", { className: "sa-media-card" }, [
+          cover,
+          h("div", { className: "sa-media-body" }, [
+            h("div", { className: "sa-media-title" }, item.title || item.item_id),
+            h("div", { className: "sa-media-meta" }, [
+              h("span", { className: "sa-chip" }, item.platform),
+              item.author ? h("span", null, item.author) : null,
+              likes > 0 ? h("span", null, "♥ " + likes) : null,
+              h("span", { className: "sa-chip" + (item.local_path ? " is-ok" : "") }, item.local_path ? "已下载" : "未下载")
+            ])
+          ])
+        ]));
+      });
+    });
+  }
+
+  function activate() { if (disposed || timer !== null) return; refresh(); loadResults(); timer = setInterval(function () { refresh(); loadResults(); }, 10000); }
+  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
+  return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
+}
+
+
+// ---- lib/panel/views/comment-watches.js ----
+// 评论监控 — 盯住作品/账号的评论。
+
+function renderCommentWatches(ctx) {
+  return renderArea(ctx, {
+    path: "comment-watches",
+    title: "评论监控",
+    description: "盯住指定作品或账号的评论。",
+    titleKey: "title",
+    note: "尚未接入：平台侧评论采集能力还没实现，因此这里只会显示你配置的监控项，不会有采集结果。",
+    fields: [
+      { key: "platform", label: "平台", type: "select", options: [{"value":"douyin","label":"抖音"},{"value":"xhs","label":"小红书"},{"value":"kuaishou","label":"快手"},{"value":"shipinhao","label":"视频号"},{"value":"tiktok","label":"TikTok"}] },
+      { key: "title", label: "名称", placeholder: "备注名" },
+      { key: "ref", label: "作品/账号", placeholder: "作品链接或账号" },
+      { key: "interval_seconds", label: "间隔(秒)", type: "number", value: "1800", width: "110px" }
+    ],
+    subtitle: function (r) { return "目标：" + (r.ref || "-"); }
+  });
+}
+
+
+// ---- lib/panel/views/danmaku-watches.js ----
+// 弹幕监控 — 盯住视频弹幕。
+
+function renderDanmakuWatches(ctx) {
+  return renderArea(ctx, {
+    path: "danmaku-watches",
+    title: "弹幕监控",
+    description: "盯住指定视频的弹幕。",
+    titleKey: "title",
+    note: "尚未接入：平台侧弹幕采集能力还没实现，因此这里只会显示你配置的监控项，不会有采集结果。",
+    fields: [
+      { key: "platform", label: "平台", type: "select", options: [{"value":"douyin","label":"抖音"},{"value":"xhs","label":"小红书"},{"value":"kuaishou","label":"快手"},{"value":"shipinhao","label":"视频号"},{"value":"tiktok","label":"TikTok"}] },
+      { key: "title", label: "名称", placeholder: "备注名" },
+      { key: "ref", label: "视频", placeholder: "视频链接或 ID" },
+      { key: "interval_seconds", label: "间隔(秒)", type: "number", value: "1800", width: "110px" }
+    ],
+    subtitle: function (r) { return "目标：" + (r.ref || "-"); }
+  });
+}
+
+
+// ---- lib/panel/views/account-manager.js ----
+// 账号管理 — 已登录账号自身的数据（粉丝 / 关注 / 作品 / 获赞）。
+
+function renderAccountManager(ctx) {
+  var api = ctx.api;
+  var root = h("div", { className: "sa-view" });
+  var timer = null;
+  var disposed = false;
+  var status = h("div", { className: "sa-caption" }, "");
+  var refreshBtn = h("button", { type: "button", className: "sa-btn", "data-variant": "primary", onClick: refreshStats }, "刷新账号数据");
+  var grid = h("div", { className: "sa-grid" });
+
+  root.appendChild(h("div", { className: "sa-section-title" }, "账号管理"));
+  root.appendChild(h("div", { className: "sa-muted" }, "读取已登录账号自身的运营数据。点「刷新账号数据」会打开账号主页读取一次。"));
+  root.appendChild(h("div", { className: "sa-row" }, [refreshBtn, status]));
+  root.appendChild(grid);
+
+  async function refreshStats() {
+    refreshBtn.disabled = true;
+    status.textContent = "正在读取（打开账号主页，约 10-20 秒）…";
+    try {
+      var res = await api.refreshAccountStats();
+      var results = res.ok && res.data && Array.isArray(res.data.results) ? res.data.results : [];
+      if (results.length === 0) { status.textContent = "没有已登录账号，或读取失败：" + (res.error || res.status); return; }
+      status.textContent = results.map(function (r) {
+        if (r.state === "ok") return r.platform + " ✓ " + r.nickname + "（粉丝 " + r.fans + "）";
+        if (r.state === "unsupported") return r.platform + " 尚未接入";
+        if (r.state === "signed-out") return r.platform + " 未登录";
+        return r.platform + " " + (r.error || r.state);
+      }).join(" · ");
+      load();
+    } finally { refreshBtn.disabled = false; }
+  }
+
+  function load() {
+    if (disposed) return;
+    api.accountStats().then(function (res) {
+      if (disposed) return;
+      clear(grid);
+      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
+      if (items.length === 0) { grid.appendChild(h("div", { className: "sa-empty" }, "还没有账号数据 —— 点上面的按钮读取一次。")); return; }
+      var latest = {};
+      items.forEach(function (row) { if (!latest[row.platform]) latest[row.platform] = row; });
+      Object.keys(latest).forEach(function (key) {
+        var row = latest[key];
+        grid.appendChild(h("div", { className: "sa-platform is-bound" }, [
+          h("div", { className: "sa-platform-head" }, [
+            h("span", { className: "sa-badge" }, (row.nickname || key).slice(0, 2)),
+            h("span", { className: "sa-platform-name" }, row.nickname || key),
+            h("span", { className: "sa-state is-ok" }, key)
+          ]),
+          h("div", { className: "sa-cards" }, [
+            h("div", { className: "sa-card" }, [h("b", null, String(row.followers)), h("span", { className: "sa-caption" }, "粉丝")]),
+            h("div", { className: "sa-card" }, [h("b", null, String(row.following)), h("span", { className: "sa-caption" }, "关注")]),
+            h("div", { className: "sa-card" }, [h("b", null, String(row.works)), h("span", { className: "sa-caption" }, "作品")]),
+            h("div", { className: "sa-card" }, [h("b", null, String(row.likes)), h("span", { className: "sa-caption" }, "获赞")])
+          ]),
+          h("div", { className: "sa-caption" }, "读取于 " + fmtTime(row.taken_at))
+        ]));
+      });
+    });
+  }
+
+  function activate() { if (disposed || timer !== null) return; load(); timer = setInterval(load, 15000); }
+  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
+  return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
+}
+
+
+// ---- lib/panel/views/runs.js ----
+// 运行 — 时间线视图：每次运行展开成可视化的步骤。
+
+var STAGE_LABEL = { source: "取内容", filter: "筛选", action: "执行" };
+
+function renderRuns(ctx) {
+  var api = ctx.api;
+  var root = h("div", { className: "sa-view" });
+  var timer = null;
+  var disposed = false;
+  var list = h("div", { className: "sa-list" });
+  var expanded = null;
+
+  root.appendChild(h("div", { className: "sa-section-title" }, "运行历史"));
+  root.appendChild(list);
+
+  function stepsFor(run) {
+    var box = h("div", { className: "sa-steps" });
+    (run.steps || []).forEach(function (step) {
+      box.appendChild(h("div", { className: "sa-step" }, [
+        h("span", { className: "sa-step-dot" + (step.state === "ok" ? " is-ok" : " is-bad") }),
+        h("div", { className: "sa-step-main" }, [
+          h("div", { className: "sa-step-title" }, (STAGE_LABEL[step.stage] || step.stage) + " · " + step.capability),
+          h("div", { className: "sa-caption" }, "进入 " + step.in_count + " 条 → 产出 " + step.out_count + " 条" + (step.detail ? " · " + step.detail : "")),
+          step.error ? h("div", { className: "sa-warn" }, step.error) : null
+        ])
+      ]));
+    });
+    return box;
+  }
+
+  async function toggle(id, card) {
+    if (expanded === id) { expanded = null; refresh(); return; }
+    expanded = id;
+    var res = await api.run(id);
+    var holder = card.querySelector("[data-detail]");
+    if (holder && res.ok && res.data) { clear(holder); holder.appendChild(stepsFor(res.data)); }
+  }
+
+  function refresh() {
+    if (disposed) return;
+    api.runs(30).then(function (res) {
+      if (disposed) return;
+      clear(list);
+      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
+      if (items.length === 0) { list.appendChild(h("div", { className: "sa-empty" }, "还没有运行记录。")); return; }
+      items.forEach(function (run) {
+        var detail = h("div", { "data-detail": "" });
+        var card = h("div", { className: "sa-platform" }, [
+          h("div", { className: "sa-platform-head" }, [
+            h("span", { className: "sa-dot", "data-state": run.state === "ok" ? "online" : (run.state === "failed" ? "offline" : "idle") }),
+            h("span", { className: "sa-platform-name" }, "#" + run.id + " " + (run.flow_name || "")),
+            h("span", { className: "sa-chip" }, "发现 " + run.found),
+            h("span", { className: "sa-chip is-ok" }, "写入 " + run.saved),
+            h("span", { className: "sa-caption" }, fmtTime(run.started_at)),
+            h("button", { type: "button", className: "sa-btn", onClick: function () { toggle(run.id, card); } }, expanded === run.id ? "收起" : "查看步骤")
+          ]),
+          run.error ? h("div", { className: "sa-warn" }, run.error) : null,
+          detail
+        ]);
+        list.appendChild(card);
+        if (expanded === run.id) {
+          api.run(run.id).then(function (full) {
+            if (disposed || !full.ok || !full.data) return;
+            clear(detail);
+            detail.appendChild(stepsFor(full.data));
+          });
+        }
       });
     });
   }
@@ -988,6 +924,150 @@ function renderCapabilities(ctx) {
   function activate() { if (disposed || timer !== null) return; refresh(); timer = setInterval(refresh, 10000); }
   function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
   return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
+}
+
+
+// ---- lib/panel/views/publish.js ----
+// 发布 — 待发布草稿与复核。
+
+function renderPublish(ctx) {
+  var api = ctx.api;
+  var root = h("div", { className: "sa-view" });
+  var timer = null;
+  var disposed = false;
+  var status = h("div", { className: "sa-caption" }, "");
+  var list = h("div", { className: "sa-list" });
+
+  root.appendChild(h("div", { className: "sa-section-title" }, "发布"));
+  root.appendChild(h("div", { className: "sa-muted" }, "流程产生的发布草稿。批准后才会进入下一步（准备草稿到平台创作者后台）。"));
+  root.appendChild(status);
+  root.appendChild(list);
+
+  async function review(id, nextStatus) {
+    var res = await api.reviewPlan(id, nextStatus);
+    status.textContent = res.ok ? ("已标记为 " + nextStatus) : ("操作失败：" + (res.error || res.status));
+    refresh();
+  }
+
+  function refresh() {
+    if (disposed) return;
+    api.publishPlans().then(function (res) {
+      if (disposed) return;
+      clear(list);
+      var items = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
+      if (items.length === 0) {
+        list.appendChild(h("div", { className: "sa-empty" }, "还没有发布草稿。在「流程」里加一个「生成发布计划」动作即可产出。"));
+        return;
+      }
+      items.forEach(function (row) {
+        var badge = row.status === "approved" ? "已批准" : (row.status === "discarded" ? "已丢弃" : (row.status === "prepared" ? "已准备" : "待复核"));
+        var rowEl = h("div", { className: "sa-list-row" }, [
+          h("div", { className: "sa-row" }, [
+            h("span", { className: "sa-chip" }, row.source_platform + " → " + row.platform),
+            h("span", { style: { flex: 1, fontWeight: 600 } }, row.title || "(无标题)"),
+            h("span", { className: "sa-state" + (row.status === "approved" ? " is-ok" : "") }, badge),
+            h("span", { className: "sa-caption" }, fmtTime(row.created_at)),
+            row.status === "draft" ? h("button", { type: "button", className: "sa-btn", "data-variant": "primary", onClick: function () { review(row.id, "approved"); } }, "批准") : null,
+            row.status === "draft" ? h("button", { type: "button", className: "sa-btn", onClick: function () { review(row.id, "discarded"); } }, "丢弃") : null
+          ]),
+          row.body ? h("div", { className: "sa-caption" }, row.body) : null,
+          row.tags ? h("div", { className: "sa-caption" }, "标签：" + row.tags) : null
+        ]);
+        list.appendChild(rowEl);
+      });
+    });
+  }
+
+  function activate() { if (disposed || timer !== null) return; refresh(); timer = setInterval(refresh, 10000); }
+  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
+  return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
+}
+
+
+// ---- lib/panel/views/auto-comment.js ----
+// 自动评论 — 规则配置。
+
+function renderAutoComment(ctx) {
+  return renderArea(ctx, {
+    path: "comment-rules",
+    title: "自动评论",
+    description: "配置自动评论规则。默认关闭，且需要人工复核。",
+    titleKey: "name",
+    note: "尚未接入：评论发送能力还没实现。规则创建后默认停用，不会产生任何自动行为。",
+    fields: [
+      { key: "platform", label: "平台", type: "select", options: [{"value":"douyin","label":"抖音"},{"value":"xhs","label":"小红书"},{"value":"kuaishou","label":"快手"},{"value":"shipinhao","label":"视频号"},{"value":"tiktok","label":"TikTok"}] },
+      { key: "name", label: "规则名", placeholder: "例如 露营视频感谢" },
+      { key: "mode", label: "模式", type: "select", options: [{ value: "review", label: "人工复核" }, { value: "auto", label: "自动发送" }] },
+      { key: "target_ref", label: "目标", placeholder: "作品或账号" },
+      { key: "templates", label: "回复模板", placeholder: "多条用 | 分隔" },
+      { key: "daily_cap", label: "每日上限", type: "number", value: "20", width: "100px" }
+    ],
+    subtitle: function (r) { return "模式 " + r.mode + " · 上限 " + r.daily_cap + "/天 · 目标 " + (r.target_ref || "-"); }
+  });
+}
+
+
+// ---- lib/panel/views/downloads.js ----
+// 链接下载 — 已下载到本地的素材文件。
+
+function renderDownloads(ctx) {
+  var api = ctx.api;
+  var root = h("div", { className: "sa-view" });
+  var timer = null;
+  var disposed = false;
+  var status = h("div", { className: "sa-caption" }, "");
+  var list = h("div", { className: "sa-list" });
+
+  root.appendChild(h("div", { className: "sa-section-title" }, "链接下载"));
+  root.appendChild(h("div", { className: "sa-muted" }, "流程里勾选「下载媒体文件」后，文件会落在这里。按链接下载（粘贴链接直接下载）尚未接入。"));
+  root.appendChild(status);
+  root.appendChild(list);
+
+  function refresh() {
+    if (disposed) return;
+    api.artifacts(300).then(function (res) {
+      if (disposed) return;
+      clear(list);
+      var all = res.ok && res.data && Array.isArray(res.data.items) ? res.data.items : [];
+      var items = all.filter(function (a) { return a.local_path && a.local_path.length > 0; });
+      status.textContent = "已下载 " + items.length + " 项 · 素材库共 " + all.length + " 项";
+      if (items.length === 0) { list.appendChild(h("div", { className: "sa-empty" }, "还没有下载任何文件。")); return; }
+      items.forEach(function (row) {
+        list.appendChild(h("div", { className: "sa-list-row" }, [
+          h("div", { className: "sa-row" }, [
+            h("span", { className: "sa-chip is-ok" }, "已下载"),
+            h("span", { style: { flex: 1, fontWeight: 600 } }, row.title || row.item_id),
+            h("span", { className: "sa-caption" }, row.platform + " · " + fmtTime(row.collected_at))
+          ]),
+          h("div", { className: "sa-caption", style: { wordBreak: "break-all" } }, row.local_path)
+        ]));
+      });
+    });
+  }
+
+  function activate() { if (disposed || timer !== null) return; refresh(); timer = setInterval(refresh, 10000); }
+  function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
+  return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
+}
+
+
+// ---- lib/panel/views/notifications.js ----
+// 通知 — 通知渠道配置。
+
+function renderNotifications(ctx) {
+  return renderArea(ctx, {
+    path: "notifications",
+    title: "通知",
+    description: "流程结束、采集完成、失败告警的推送渠道。",
+    titleKey: "name",
+    note: "尚未接入：推送发送还没实现，配置会保存但不会真正发出通知。",
+    fields: [
+      { key: "name", label: "名称", placeholder: "例如 我的钉钉群" },
+      { key: "type", label: "类型", type: "select", options: [{ value: "webhook", label: "Webhook" }, { value: "desktop", label: "桌面通知" }] },
+      { key: "config_json", label: "配置(JSON)", placeholder: '{"url":"..."}' }
+    ],
+    subtitle: function (r) { return r.type + " · " + (r.config_json || "{}").slice(0, 60); }
+  });
 }
 
 
@@ -1151,18 +1231,22 @@ function renderAbout(ctx) {
 
 
 // ---- lib/panel/index.js ----
-// RelayDeck panel — native secondary navigation over the product's views.
-// One DSH sidebar entry (registered in lib/host/client.js); the views live here.
-// Polling is owned by each view: activate() on show, deactivate() on hide or
-// switch, dispose() on unmount.
+// RelayDeck panel — 左侧 12 个板块（与用户指定顺序一致）+ 开发调试 / 关于。
+// 每个板块都读取后端真实数据；尚未接入的能力会在页面上明确标注，不做任何模拟。
 
 var VIEWS = [
-  { id: "dashboard", label: "看板", render: renderDashboard },
-  { id: "flows", label: "流程", render: renderFlows },
-  { id: "runs", label: "运行", render: renderRuns },
-  { id: "library", label: "素材", render: renderLibrary },
-  { id: "accounts", label: "账号", render: renderAccounts },
-  { id: "capabilities", label: "能力", render: renderCapabilities },
+  { id: "dashboard", label: "工作台", render: renderDashboard },
+  { id: "accounts", label: "平台账号", render: renderAccounts },
+  { id: "monitors", label: "作品监控", render: renderMonitors },
+  { id: "collections", label: "关键词采集", render: renderCollections },
+  { id: "comment-watches", label: "评论监控", render: renderCommentWatches },
+  { id: "danmaku-watches", label: "弹幕监控", render: renderDanmakuWatches },
+  { id: "account-manager", label: "账号管理", render: renderAccountManager },
+  { id: "tasks", label: "任务队列", render: renderRuns },
+  { id: "publish", label: "发布", render: renderPublish },
+  { id: "auto-comment", label: "自动评论", render: renderAutoComment },
+  { id: "downloads", label: "链接下载", render: renderDownloads },
+  { id: "notifications", label: "通知", render: renderNotifications },
   { id: "dev", label: "开发调试", render: renderDev },
   { id: "about", label: "关于", render: renderAbout }
 ];
@@ -1210,22 +1294,13 @@ function createPanel(host, options) {
     clear(main);
     for (var key in buttons) buttons[key].setAttribute("aria-current", key === id ? "true" : "false");
     activeId = id;
-    if (!api) {
-      main.appendChild(h("div", { className: "sa-empty" }, "正在连接 RelayDeck 后端…"));
-      return;
-    }
+    if (!api) { main.appendChild(h("div", { className: "sa-empty" }, "正在连接 RelayDeck 后端…")); return; }
     var view = null;
     for (var i = 0; i < VIEWS.length; i++) if (VIEWS[i].id === id) view = VIEWS[i];
     if (!view) return;
     current = view.render({
-      h: h,
-      api: api,
-      host: host,
-      config: config,
-      events: events,
-      sessionContext: sessionContext,
-      clientCtx: opts.clientCtx,
-      navigate: mountView
+      h: h, api: api, host: host, config: config, events: events,
+      sessionContext: sessionContext, clientCtx: opts.clientCtx, navigate: mountView
     });
     main.appendChild(current.element);
     if (visible) current.activate();
@@ -1248,9 +1323,7 @@ function createPanel(host, options) {
     mountView(activeId);
   }
 
-  var offSession = events.on("session-context", function (payload) {
-    if (payload) sessionContext = payload;
-  });
+  var offSession = events.on("session-context", function (payload) { if (payload) sessionContext = payload; });
 
   host.resolveConfig().then(function (cfg) {
     if (disposed) return;

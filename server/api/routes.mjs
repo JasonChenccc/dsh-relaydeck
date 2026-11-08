@@ -5,7 +5,7 @@ import { list as listCapabilities } from "../capabilities/index.mjs";
 import { executeFlow, readRun, readFlow, validateSpec } from "../flow.mjs";
 import { errorText } from "../log.mjs";
 import { platform, platformIds } from "../platforms.mjs";
-import { startLogin, pollLogin, cancelLogin, listLogins, qrImage, verifyBindings } from "../browser/login.mjs";
+import { startLogin, pollLogin, cancelLogin, listLogins, qrImage, verifyBindings, refreshAccountStats } from "../browser/login.mjs";
 import { schedulerState, startScheduler, stopScheduler, nextRunAt } from "../scheduler.mjs";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
@@ -38,6 +38,15 @@ function match(pattern, parts) {
   }
   return params;
 }
+
+/** One CRUD surface per product area, so every panel page reads real rows. */
+const AREA_TABLES = [
+  { path: "monitors", table: "monitors", fields: ["platform", "kind", "name", "ref", "binding_id", "interval_seconds"], flags: ["enabled"] },
+  { path: "comment-watches", table: "comment_watches", fields: ["platform", "title", "ref", "binding_id", "interval_seconds"], flags: ["enabled"] },
+  { path: "danmaku-watches", table: "danmaku_watches", fields: ["platform", "title", "ref", "binding_id", "interval_seconds"], flags: ["enabled"] },
+  { path: "comment-rules", table: "comment_rules", fields: ["platform", "name", "mode", "target_ref", "templates", "daily_cap", "min_gap_seconds"], flags: ["enabled"] },
+  { path: "notifications", table: "notifications", fields: ["name", "type", "config_json"], flags: ["enabled"] }
+];
 
 export function createRouter({ db, version, startedAt, dataDir, runFlowById, schedulerTickMs }) {
   const routes = [];
@@ -196,6 +205,78 @@ export function createRouter({ db, version, startedAt, dataDir, runFlowById, sch
     if (!keepBindings) db.exec("DELETE FROM bindings");
     return { payload: { purged: true, keepBindings } };
   });
+
+  for (const area of AREA_TABLES) {
+    const columns = [...area.fields, ...(area.flags || [])];
+    on("GET", "/api/" + area.path, () => ({
+      items: db.prepare("SELECT * FROM " + area.table + " ORDER BY id DESC").all()
+        .map((row) => { const out = { ...row }; for (const flag of area.flags || []) out[flag] = row[flag] === 1; return out; })
+    }));
+
+    on("POST", "/api/" + area.path, async (_params, req) => {
+      const body = await readJson(req);
+      const values = columns.map((key) => {
+        const value = body[key];
+        if ((area.flags || []).includes(key)) return value === false || value === 0 ? 0 : 1;
+        if (key === "interval_seconds") return Number(value) || 3600;
+        if (key === "daily_cap" || key === "min_gap_seconds") return Number(value) || 0;
+        if (key === "binding_id") return value === undefined || value === null ? null : Number(value);
+        return value === undefined || value === null ? "" : String(value);
+      });
+      const info = db.prepare(
+        "INSERT INTO " + area.table + " (" + columns.join(", ") + ", created_at) VALUES (" +
+        columns.map(() => "?").join(", ") + ", ?)"
+      ).run(...values, nowIso());
+      return { statusCode: 201, payload: db.prepare("SELECT * FROM " + area.table + " WHERE id = ?").get(Number(info.lastInsertRowid)) };
+    });
+
+    on("PUT", "/api/" + area.path + "/:id", async (params, req) => {
+      const body = await readJson(req);
+      const sets = [];
+      const values = [];
+      for (const key of columns) {
+        if (body[key] === undefined) continue;
+        sets.push(key + " = ?");
+        if ((area.flags || []).includes(key)) values.push(body[key] ? 1 : 0);
+        else if (["interval_seconds", "daily_cap", "min_gap_seconds"].includes(key)) values.push(Number(body[key]) || 0);
+        else if (key === "binding_id") values.push(body[key] === null ? null : Number(body[key]));
+        else values.push(String(body[key]));
+      }
+      if (sets.length === 0) return { payload: { updated: false } };
+      values.push(Number(params.id));
+      const info = db.prepare("UPDATE " + area.table + " SET " + sets.join(", ") + " WHERE id = ?").run(...values);
+      return { payload: { updated: info.changes > 0 } };
+    });
+
+    on("DELETE", "/api/" + area.path + "/:id", (params) => {
+      const info = db.prepare("DELETE FROM " + area.table + " WHERE id = ?").run(Number(params.id));
+      return { payload: { deleted: info.changes > 0 } };
+    });
+
+    on("POST", "/api/" + area.path + "/:id/toggle", (params) => {
+      const row = db.prepare("SELECT id, enabled FROM " + area.table + " WHERE id = ?").get(Number(params.id));
+      if (!row) return { statusCode: 404, payload: { error: "not found" } };
+      const next = row.enabled === 1 ? 0 : 1;
+      db.prepare("UPDATE " + area.table + " SET enabled = ? WHERE id = ?").run(next, row.id);
+      return { payload: { id: row.id, enabled: next === 1 } };
+    });
+  }
+
+  // 采集到的原始记录（评论 / 弹幕）
+  on("GET", "/api/records", (params, req) => {
+    const url = new URL(req.url, "http://127.0.0.1");
+    const kind = url.searchParams.get("kind");
+    const watchId = url.searchParams.get("watchId");
+    const limit = Math.min(Number(url.searchParams.get("limit") || 100), 500);
+    if (kind && watchId) return { items: db.prepare("SELECT * FROM records WHERE kind = ? AND watch_id = ? ORDER BY id DESC LIMIT ?").all(kind, Number(watchId), limit) };
+    if (kind) return { items: db.prepare("SELECT * FROM records WHERE kind = ? ORDER BY id DESC LIMIT ?").all(kind, limit) };
+    return { items: db.prepare("SELECT * FROM records ORDER BY id DESC LIMIT ?").all(limit) };
+  });
+
+  // 账号管理：账号自身的统计
+  on("GET", "/api/account-stats", () => ({ items: db.prepare("SELECT * FROM account_stats ORDER BY id DESC LIMIT 200").all() }));
+
+  on("POST", "/api/account-stats/refresh", async () => ({ payload: { results: await refreshAccountStats(db) } }));
 
   on("GET", "/api/bindings", () => ({ items: db.prepare("SELECT id, platform, label, nickname, platform_uid, state, proxy, last_used_at, created_at FROM bindings ORDER BY platform, id").all() }));
 

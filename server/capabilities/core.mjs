@@ -166,38 +166,7 @@ registerAll([
       return { detail: "生成 " + created + " 条发布草稿 → " + target, saved: 0 };
     }
   },
-  {
-    id: "core.demoFeed",
-    platform: "core",
-    stage: "source",
-    title: "演示数据源",
-    description: "不需要登录的离线数据源，用来验证整条流程链（筛选→落库→下载→发布计划）确实能跑通。",
-    params: { count: "生成条数（默认 6）", platform: "伪装的来源平台（默认 douyin）", realMedia: "改为真实图片 URL 时填 1" },
-    async run({ params }) {
-      const count = Math.max(1, Math.min(Number(params.count) || 6, 50));
-      const platform = String(params.platform || "douyin");
-      const useReal = String(params.realMedia || "") === "1";
-      const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
-      const media = (index) => useReal
-        ? ["https://picsum.photos/seed/relaydeck" + index + "/240/135"]
-        : [png];
-      const items = [];
-      for (let index = 1; index <= count; index += 1) {
-        const likes = [120, 860, 1500, 2400, 7300, 55][index % 6];
-        items.push({
-          platform: platform,
-          item_id: "demo-" + String(index).padStart(3, "0"),
-          title: "演示作品 " + index + "（点赞 " + likes + "）",
-          author: "演示作者 " + ((index % 3) + 1),
-          cover_url: media(index)[0],
-          media: media(index),
-          stats: { like_count: likes, comment_count: likes % 97, share_count: likes % 31, play_count: likes * 12 },
-          published_at: new Date(Date.now() - index * 3600_000).toISOString()
-        });
-      }
-      return items;
-    }
-  }
+
 ]);
 
 export { normalizeItem };
