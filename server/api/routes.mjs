@@ -323,6 +323,45 @@ export function createRouter({ db, version, startedAt, dataDir, runFlowById, sch
     }
   });
 
+  // 风控汇总：账号健康 + 近期异常（全部由已有数据派生，不额外造状态）
+  on("GET", "/api/risk", () => {
+    const bindings = db.prepare("SELECT id, platform, nickname, state, last_used_at FROM bindings").all();
+    const failedRuns = db.prepare("SELECT id, flow_name, error, started_at FROM runs WHERE state = 'failed' ORDER BY id DESC LIMIT 20").all();
+    const failedMonitors = db.prepare("SELECT id, platform, name, last_error, last_scan_at FROM monitors WHERE last_state = 'failed' ORDER BY id DESC LIMIT 20").all();
+    const unsupported = db.prepare("SELECT id, platform, title FROM comment_watches WHERE last_state = 'unsupported'").all()
+      .concat(db.prepare("SELECT id, platform, title FROM danmaku_watches WHERE last_state = 'unsupported'").all());
+    const signedOut = bindings.filter((b) => b.state !== "active");
+    const issues = failedRuns.length + failedMonitors.length + signedOut.length;
+    return {
+      healthy: issues === 0,
+      accounts: bindings,
+      failedRuns,
+      failedMonitors,
+      unsupported,
+      counts: { accounts: bindings.length, signedOut: signedOut.length, failedRuns: failedRuns.length, failedMonitors: failedMonitors.length, unsupported: unsupported.length }
+    };
+  });
+
+  // 导出：任何板块都能导出 CSV
+  on("GET", "/api/export", (_params, req) => {
+    const url = new URL(req.url, "http://127.0.0.1");
+    const table = url.searchParams.get("table") || "artifacts";
+    const allowed = ["artifacts", "runs", "run_steps", "flows", "publish_plans", "monitors",
+                     "comment_watches", "danmaku_watches", "comment_rules", "notifications", "records", "bindings", "account_stats"];
+    if (!allowed.includes(table)) return { statusCode: 400, payload: { error: "table not exportable" } };
+    const rows = db.prepare("SELECT * FROM " + table + " ORDER BY id DESC LIMIT 5000").all();
+    const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+    const cell = (value) => {
+      if (value === null || value === undefined) return "";
+      const text = String(value).replace(/"/g, '""');
+      return /[",\n]/.test(text) ? '"' + text + '"' : text;
+    };
+    const csv = [columns.join(",")]
+      .concat(rows.map((row) => columns.map((c) => cell(row[c])).join(",")))
+      .join("\n");
+    return { raw: "\uFEFF" + csv, contentType: "text/csv; charset=utf-8" };
+  });
+
   // 统一任务队列：所有板块的待处理项汇到一处
   on("GET", "/api/queue", () => {
     const runs = db.prepare("SELECT id, flow_name, state, found, kept, saved, error, started_at FROM runs ORDER BY id DESC LIMIT 60").all();
@@ -396,6 +435,15 @@ export function createRouter({ db, version, startedAt, dataDir, runFlowById, sch
       if (!params) continue;
       try {
         const result = await route.handler(params, req);
+        // 原始响应（导出 CSV 等）直接写字节，不做 JSON 包装
+        if (result && typeof result.raw === "string") {
+          res.writeHead(result.statusCode || 200, {
+            "content-type": result.contentType || "text/plain; charset=utf-8",
+            "cache-control": "no-store"
+          });
+          res.end(result.raw);
+          return;
+        }
         const payload = result && result.payload !== undefined ? result.payload : result;
         if (payload && typeof payload === "object" && "statusCode" in payload) delete payload.statusCode;
         send(res, (result && result.statusCode) || 200, payload);

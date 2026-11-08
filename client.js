@@ -122,6 +122,7 @@ function createApiBridge(proxy) {
     verifyBindings: function () { return call("POST", "/api/bindings/verify", {}, 120000); },
     queue: function () { return call("GET", "/api/queue"); },
     metrics: function () { return call("GET", "/api/metrics"); },
+    risk: function () { return call("GET", "/api/risk"); },
     scanWatch: function (table, id) { return call("POST", "/api/" + table + "/" + encodeURIComponent(String(id)) + "/scan", {}, 300000); },
     scanMonitor: function (id) { return call("POST", "/api/monitors/" + encodeURIComponent(String(id)) + "/scan", {}, 300000); },
     testNotification: function (id) { return call("POST", "/api/notifications/" + encodeURIComponent(String(id)) + "/send-test", {}, 20000); },
@@ -182,8 +183,9 @@ function renderArea(ctx, config) {
     fields.appendChild(h("label", { className: "sa-check" }, [h("span", { className: "sa-caption" }, field.label), input]));
   });
   var createBtn = h("button", { type: "button", className: "sa-btn", "data-variant": "primary", onClick: create }, "创建");
+  var exportBtn = h("button", { type: "button", className: "sa-btn", onClick: exportCsv }, "导出 CSV");
   form.appendChild(fields);
-  form.appendChild(h("div", { className: "sa-row" }, [createBtn, status]));
+  form.appendChild(h("div", { className: "sa-row" }, [createBtn, exportBtn, status]));
   if (config.note) form.appendChild(h("div", { className: "sa-warn" }, config.note));
   root.appendChild(form);
 
@@ -207,6 +209,12 @@ function renderArea(ctx, config) {
       status.textContent = res.ok ? "已创建 ✓" : ("创建失败：" + (res.error || res.status));
       if (res.ok) refresh();
     } finally { createBtn.disabled = false; }
+  }
+
+  function exportCsv() {
+    // 通过宿主同源代理下载，浏览器直接拿到 CSV
+    var url = "/dsh-relaydeck/proxy?path=" + encodeURIComponent("/api/export?table=" + config.exportTable);
+    window.open(url, "_blank", "noopener");
   }
 
   async function toggle(id) { await api.areaToggle(config.path, id); refresh(); }
@@ -628,6 +636,7 @@ function renderMonitors(ctx) {
     path: "monitors",
     title: "作品监控",
     description: "盯住指定创作者，按间隔采集新作品。",
+    exportTable: "monitors",
     titleKey: "name",
     note: "抖音创作者监控会读取主页作品（需先登录抖音）；关键词监控走搜索。其余平台尚未接入。开启后按间隔自动扫描，也可点行内「扫描」立即执行。",
     fields: [
@@ -790,6 +799,7 @@ function renderCommentWatches(ctx) {
     path: "comment-watches",
     title: "评论监控",
     description: "盯住指定作品或账号的评论。",
+    exportTable: "comment_watches",
     titleKey: "title",
     note: "抖音已接入评论采集（需要登录）。注意：该提取只在一批真实评论数据上做过结构核对，实际返回可能为空。",
     fields: [
@@ -822,6 +832,7 @@ function renderDanmakuWatches(ctx) {
     path: "danmaku-watches",
     title: "弹幕监控",
     description: "盯住指定视频的弹幕。",
+    exportTable: "danmaku_watches",
     titleKey: "title",
     note: "抖音已接入弹幕采集（需要登录）。注意：该提取只在一批真实弹幕数据上做过结构核对，实际返回可能为空。",
     fields: [
@@ -862,6 +873,10 @@ function renderAccountManager(ctx) {
   root.appendChild(h("div", { className: "sa-muted" }, "读取已登录账号自身的运营数据。点「刷新账号数据」会打开账号主页读取一次。"));
   root.appendChild(h("div", { className: "sa-row" }, [refreshBtn, status]));
   root.appendChild(grid);
+
+  root.appendChild(h("div", { className: "sa-section-title" }, "风控"));
+  var riskBox = h("div", { className: "sa-list" });
+  root.appendChild(riskBox);
 
   async function refreshStats() {
     refreshBtn.disabled = true;
@@ -909,7 +924,38 @@ function renderAccountManager(ctx) {
     });
   }
 
-  function activate() { if (disposed || timer !== null) return; load(); timer = setInterval(load, 15000); }
+  function loadRisk() {
+    if (disposed) return;
+    api.risk().then(function (res) {
+      if (disposed) return;
+      clear(riskBox);
+      var r = res.ok && res.data ? res.data : null;
+      if (!r) { riskBox.appendChild(h("div", { className: "sa-empty" }, "读取失败：" + (res.error || res.status))); return; }
+      riskBox.appendChild(h("div", { className: "sa-row sa-list-row" }, [
+        h("span", { className: "sa-dot", "data-state": r.healthy ? "online" : "offline" }),
+        h("span", { style: { flex: 1, fontWeight: 600 } }, r.healthy ? "无异常" : "发现 " + (r.counts.signedOut + r.counts.failedRuns + r.counts.failedMonitors) + " 项需要处理"),
+        h("span", { className: "sa-chip" }, "账号 " + r.counts.accounts),
+        h("span", { className: "sa-chip" }, "未登录 " + r.counts.signedOut),
+        h("span", { className: "sa-chip" }, "失败运行 " + r.counts.failedRuns),
+        h("span", { className: "sa-chip" }, "失败监控 " + r.counts.failedMonitors),
+        r.counts.unsupported ? h("span", { className: "sa-chip" }, "未接入 " + r.counts.unsupported) : null
+      ]));
+      (r.failedRuns || []).slice(0, 5).forEach(function (x) {
+        riskBox.appendChild(h("div", { className: "sa-list-row" }, [
+          h("div", { className: "sa-row" }, [h("span", { className: "sa-chip" }, "运行失败"), h("span", { style: { flex: 1 } }, x.flow_name || ""), h("span", { className: "sa-caption" }, fmtTime(x.started_at))]),
+          h("div", { className: "sa-warn" }, (x.error || "").slice(0, 160))
+        ]));
+      });
+      (r.failedMonitors || []).slice(0, 5).forEach(function (x) {
+        riskBox.appendChild(h("div", { className: "sa-list-row" }, [
+          h("div", { className: "sa-row" }, [h("span", { className: "sa-chip" }, "监控失败"), h("span", { style: { flex: 1 } }, x.name || ""), h("span", { className: "sa-caption" }, x.platform)]),
+          h("div", { className: "sa-warn" }, (x.last_error || "").slice(0, 160))
+        ]));
+      });
+    });
+  }
+
+  function activate() { if (disposed || timer !== null) return; load(); loadRisk(); timer = setInterval(function () { load(); loadRisk(); }, 15000); }
   function deactivate() { if (timer === null) return; clearInterval(timer); timer = null; }
   return { element: root, activate: activate, deactivate: deactivate, dispose: function () { disposed = true; deactivate(); } };
 }
@@ -1064,9 +1110,10 @@ function renderAutoComment(ctx) {
   return renderArea(ctx, {
     path: "comment-rules",
     title: "自动评论",
-    description: "配置自动评论规则。默认关闭，且需要人工复核。",
+    description: "保存回复模板与目标。不会自动发送，只用于人工复核后手动发出。",
+    exportTable: "comment_rules",
     titleKey: "name",
-    note: "尚未接入：评论发送能力还没实现。规则创建后默认停用，不会产生任何自动行为。",
+    note: "本板块**不做自动发送**。规则只用来保存模板与目标；实际回复走「准备回复」：把内容填进评论框，由你人工确认发送。这是刻意限制——自动评论是唯一可能直接导致账号受限的功能。",
     fields: [
       { key: "platform", label: "平台", type: "select", options: [{"value":"douyin","label":"抖音"},{"value":"xhs","label":"小红书"},{"value":"kuaishou","label":"快手"},{"value":"shipinhao","label":"视频号"},{"value":"tiktok","label":"TikTok"}] },
       { key: "name", label: "规则名", placeholder: "例如 露营视频感谢" },
@@ -1164,6 +1211,7 @@ function renderNotifications(ctx) {
     path: "notifications",
     title: "通知",
     description: "流程结束、采集完成、失败告警的推送渠道。",
+    exportTable: "notifications",
     titleKey: "name",
     note: "Webhook / 钉钉 / 飞书 会真实发送；「桌面通知」类型尚未接入。流程失败会自动推送，流程完成也会推送。",
     fields: [
