@@ -122,6 +122,7 @@ function createApiBridge(proxy) {
     verifyBindings: function () { return call("POST", "/api/bindings/verify", {}, 120000); },
     queue: function () { return call("GET", "/api/queue"); },
     metrics: function () { return call("GET", "/api/metrics"); },
+    testNotification: function (id) { return call("POST", "/api/notifications/" + encodeURIComponent(String(id)) + "/send-test", {}, 20000); },
     downloadUrls: function (urls, perItem) { return call("POST", "/api/downloads", { urls: urls, perItem: perItem || 1 }, 600000); },
     areaList: function (path) { return call("GET", "/api/" + path); },
     areaCreate: function (path, body) { return call("POST", "/api/" + path, body); },
@@ -221,6 +222,16 @@ function renderArea(ctx, config) {
         var title = row[config.titleKey] || row.name || row.title || ("#" + row.id);
         var sub = (config.subtitle || function (r) { return ""; })(row);
         var toggleBtn = h("button", { type: "button", className: "sa-btn", onClick: function () { toggle(row.id); } }, row.enabled ? "停用" : "启用");
+        var extra = (config.actions || []).map(function (action) {
+          return h("button", { type: "button", className: "sa-btn", onClick: async function (event) {
+            var button = event.target;
+            button.disabled = true;
+            try {
+              var message = await action.run(row, ctx.api);
+              if (message) status.textContent = message;
+            } finally { button.disabled = false; }
+          } }, action.label);
+        });
         list.appendChild(h("div", { className: "sa-list-row" }, [
           h("div", { className: "sa-row" }, [
             h("span", { className: "sa-dot", "data-state": row.enabled ? "online" : "idle" }),
@@ -229,6 +240,7 @@ function renderArea(ctx, config) {
             row.items ? h("span", { className: "sa-chip is-ok" }, "采集 " + row.items) : null,
             h("span", { className: "sa-caption" }, row.last_scan_at ? fmtTime(row.last_scan_at) : "未运行"),
             toggleBtn,
+            extra,
             h("button", { type: "button", className: "sa-btn", onClick: function () { remove(row.id); } }, "删除")
           ]),
           sub ? h("div", { className: "sa-caption" }, sub) : null,
@@ -1094,13 +1106,22 @@ function renderNotifications(ctx) {
     title: "通知",
     description: "流程结束、采集完成、失败告警的推送渠道。",
     titleKey: "name",
-    note: "尚未接入：推送发送还没实现，配置会保存但不会真正发出通知。",
+    note: "Webhook / 钉钉 / 飞书 会真实发送；「桌面通知」类型尚未接入。流程失败会自动推送，流程完成也会推送。",
     fields: [
       { key: "name", label: "名称", placeholder: "例如 我的钉钉群" },
       { key: "type", label: "类型", type: "select", options: [{ value: "webhook", label: "Webhook" }, { value: "desktop", label: "桌面通知" }] },
       { key: "config_json", label: "配置(JSON)", placeholder: '{"url":"..."}' }
     ],
-    subtitle: function (r) { return r.type + " · " + (r.config_json || "{}").slice(0, 60); }
+    subtitle: function (r) { return r.type + " · " + (r.config_json || "{}").slice(0, 60); },
+    actions: [{
+      label: "测试",
+      run: async function (row, api) {
+        var res = await api.testNotification(row.id);
+        var r = res.ok && res.data ? res.data.result : null;
+        if (!r) return "测试失败：" + (res.error || res.status);
+        return r.ok ? ("已发送（HTTP " + r.status + "）") : ("发送失败：" + (r.error || r.status));
+      }
+    }]
   });
 }
 

@@ -6,6 +6,7 @@
 import { nowIso } from "./db.mjs";
 import { get as getCapability } from "./capabilities/index.mjs";
 import { errorText } from "./log.mjs";
+import { notifyAll } from "./notify.mjs";
 
 /** Validate and normalize a raw flow spec. Throws with a readable reason. */
 export function validateSpec(raw) {
@@ -103,7 +104,18 @@ export async function executeFlow({ db, spec, flow, trigger, dataDir }) {
     }
   }
 
-  return readRun(db, run.id);
+  const finished = readRun(db, run.id);
+
+  // 通知：失败必发，成功按流程里是否有 core.notify 决定
+  try {
+    if (finished.state === "failed") {
+      void notifyAll(db, "run.failed", { title: "任务失败", text: "「" + flowName + "」运行失败：" + (finished.error || "未知原因") });
+    } else {
+      void notifyAll(db, "run.ok", { title: "任务完成", text: "「" + flowName + "」完成：发现 " + finished.found + " · 写入 " + finished.saved });
+    }
+  } catch (error) { /* 通知失败不影响运行结果 */ }
+
+  return finished;
 }
 
 export function readRun(db, runId) {

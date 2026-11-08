@@ -8,6 +8,7 @@ import { platform, platformIds } from "../platforms.mjs";
 import { startLogin, pollLogin, cancelLogin, listLogins, qrImage, verifyBindings, refreshAccountStats } from "../browser/login.mjs";
 import { schedulerState, startScheduler, stopScheduler, nextRunAt } from "../scheduler.mjs";
 import { resolveLinks, downloadItems } from "../capabilities/link.mjs";
+import { sendNotification } from "../notify.mjs";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 
@@ -264,6 +265,14 @@ export function createRouter({ db, version, startedAt, dataDir, runFlowById, sch
   }
 
   // 采集到的原始记录（评论 / 弹幕）
+  // 通知测试：真的发一条
+  on("POST", "/api/notifications/:id/send-test", async (params) => {
+    const channel = db.prepare("SELECT * FROM notifications WHERE id = ?").get(Number(params.id));
+    if (!channel) return { statusCode: 404, payload: { ok: false, error: "channel not found" } };
+    const result = await sendNotification(channel, { event: "test", title: "RelayDeck 测试", text: "这是一条来自 RelayDeck 的测试消息。" });
+    return { payload: { ok: true, result: result } };
+  });
+
   // 粘贴链接直接下载：解析 → 下载 → 落库，一步完成
   on("POST", "/api/downloads", async (_params, req) => {
     const body = await readJson(req);
