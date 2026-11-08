@@ -6,7 +6,7 @@ window.__ModuleLoader__.load({
     var module = { exports: {} };
     var exports = module.exports;
     var React = require("react");
-    var PANEL_CSS = ".sa-manager-host { height: 100%; min-height: 320px; display: flex; }\n.sa-panel {\n  display: flex; flex-direction: row; align-items: stretch; width: 100%; height: 100%;\n  font: var(--dsh-content-font-size, 13px)/1.6 var(--dsh-font-family-text, system-ui, sans-serif);\n  color: var(--dsw-alias-label-primary, #1f2328);\n  background: var(--dsw-alias-bg-base, transparent);\n}\n.sa-nav {\n  width: 152px; flex: 0 0 auto; overflow: auto; padding: 10px 8px;\n  border-right: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08));\n  display: flex; flex-direction: column; gap: 2px;\n}\n.sa-nav-item {\n  appearance: none; border: 0; background: transparent; cursor: pointer; text-align: left;\n  padding: 7px 10px; border-radius: 6px; font: inherit;\n  color: var(--dsw-alias-label-secondary, #4b5563);\n}\n.sa-nav-item:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.04)); }\n.sa-nav-item[aria-current=\"true\"] {\n  background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.06));\n  color: var(--dsw-alias-label-primary, #111); font-weight: 600;\n}\n.sa-nav-item:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #4f46e5); outline-offset: 1px; }\n.sa-main { flex: 1; min-width: 0; overflow: auto; padding: 14px; }\n.sa-view { display: flex; flex-direction: column; gap: 12px; }\n.sa-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }\n.sa-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--dsw-alias-state-idle-primary, #9ca3af); }\n.sa-dot[data-state=\"online\"] { background: var(--dsw-alias-state-success-primary, #22c55e); }\n.sa-dot[data-state=\"offline\"] { background: var(--dsw-alias-state-error-primary, #ef4444); }\n.sa-muted { color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-caption { color: var(--dsw-alias-label-caption, #9ca3af); font-size: 12px; }\n.sa-warn { color: var(--dsw-alias-state-warn-primary, #b45309); font-size: 12px; }\n.sa-addr { word-break: break-all; color: var(--dsw-alias-label-secondary, #4b5563); }\n.sa-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }\n.sa-card {\n  padding: 10px; border-radius: 8px; border: 1px solid var(--dsw-alias-settings-card-stroke, rgba(0,0,0,.08));\n  background: var(--dsw-alias-settings-card-fill, rgba(0,0,0,.02));\n}\n.sa-card b { display: block; font-size: 18px; font-weight: 600; }\n.sa-btn {\n  appearance: none; cursor: pointer; font: inherit; padding: 6px 12px; border-radius: 6px;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n  background: var(--dsw-alias-button-elevated-fill, transparent);\n  color: var(--dsw-alias-label-primary, #111);\n}\n.sa-btn:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.05)); }\n.sa-btn:disabled { cursor: not-allowed; opacity: .5; }\n.sa-btn[data-variant=\"primary\"] {\n  border-color: transparent; background: var(--dsw-alias-button-primary-fill, #4f46e5); color: #fff;\n}\n.sa-table { width: 100%; border-collapse: collapse; }\n.sa-table th, .sa-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.06)); vertical-align: top; }\n.sa-table th { color: var(--dsw-alias-label-tertiary, #6b7280); font-weight: 500; white-space: nowrap; }\n.sa-empty { padding: 24px 8px; text-align: center; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-trend { display: flex; flex-wrap: wrap; gap: 6px; }\n.sa-trend span { padding: 2px 6px; border-radius: 4px; background: var(--dsw-alias-bg-layer-2, rgba(0,0,0,.03)); color: var(--dsw-alias-label-secondary, #4b5563); font-size: 12px; }\n.sa-section-title { font-weight: 600; margin-top: 4px; }\n\n.sa-dev-log {\n  margin: 0; padding: 10px; border-radius: 8px; max-height: 260px; overflow: auto;\n  background: var(--dsw-alias-markdown-code-block, rgba(0,0,0,.04));\n  color: var(--dsw-alias-label-secondary, #4b5563);\n  font: var(--dsh-font-family-code, ui-monospace, monospace); font-size: 12px; white-space: pre-wrap; word-break: break-all;\n}\n\n.sa-list { display: flex; flex-direction: column; gap: 6px; }\n.sa-list-row {\n  padding: 6px 8px; border-radius: 6px;\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.06));\n}\n.sa-input {\n  width: 100%; padding: 6px 10px; border-radius: 6px; font: inherit;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n  background: var(--dsw-alias-bg-base, transparent); color: inherit;\n}\n.sa-textarea {\n  width: 100%; min-height: 150px; padding: 10px; border-radius: 8px;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n  background: var(--dsw-alias-markdown-code-block, rgba(0,0,0,.03));\n  color: inherit; font: var(--dsh-font-family-code, ui-monospace, monospace);\n  font-size: 12px; white-space: pre;\n}\n\n/* ── visual building blocks ── */\n.sa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }\n.sa-platform {\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08)); border-radius: 10px;\n  padding: 12px; display: flex; flex-direction: column; gap: 8px;\n  background: var(--dsw-alias-settings-card-fill, rgba(0,0,0,.02));\n}\n.sa-platform.is-bound { border-color: var(--dsw-alias-state-success-tertiary, rgba(34,197,94,.45)); }\n.sa-platform-head { display: flex; align-items: center; gap: 8px; }\n.sa-badge {\n  width: 28px; height: 28px; border-radius: 8px; flex: 0 0 auto;\n  display: inline-flex; align-items: center; justify-content: center;\n  font-size: 12px; font-weight: 600; color: #fff;\n  background: var(--dsw-alias-brand-primary, #4f46e5);\n}\n.sa-platform-name { flex: 1; font-weight: 600; }\n.sa-state { font-size: 12px; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-state.is-ok { color: var(--dsw-alias-state-success-primary, #16a34a); }\n.sa-platform-body { font-size: 12px; color: var(--dsw-alias-label-tertiary, #6b7280); min-height: 32px; }\n.sa-platform-foot { display: flex; gap: 8px; }\n\n.sa-qr-card {\n  margin-top: 12px; display: flex; gap: 18px; align-items: center; padding: 16px;\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08)); border-radius: 12px;\n  background: var(--dsw-alias-bg-layer-2, rgba(0,0,0,.02));\n}\n.sa-qr-box {\n  width: 200px; height: 200px; flex: 0 0 auto; border-radius: 10px; overflow: hidden;\n  background: #fff; display: flex; align-items: center; justify-content: center;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n}\n.sa-qr-img { width: 100%; height: 100%; object-fit: contain; }\n.sa-qr-placeholder { font-size: 12px; color: #9ca3af; }\n.sa-qr-info { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }\n.sa-qr-title { font-weight: 600; }\n.sa-qr-hint { font-size: 12px; color: var(--dsw-alias-label-secondary, #4b5563); }\n\n.sa-media-card {\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08)); border-radius: 10px;\n  overflow: hidden; background: var(--dsw-alias-settings-card-fill, rgba(0,0,0,.02));\n  display: flex; flex-direction: column;\n}\n.sa-thumb {\n  width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;\n  background: var(--dsw-alias-bg-skeleton, rgba(0,0,0,.06));\n}\n.sa-thumb-empty {\n  width: 100%; aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center;\n  background: var(--dsw-alias-bg-skeleton, rgba(0,0,0,.06)); color: #9ca3af; font-size: 12px;\n}\n.sa-media-body { padding: 10px; display: flex; flex-direction: column; gap: 6px; }\n.sa-media-title { font-weight: 600; font-size: 13px; line-height: 1.4; max-height: 2.8em; overflow: hidden; }\n.sa-media-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-chip {\n  font-size: 11px; padding: 1px 6px; border-radius: 999px;\n  background: var(--dsw-alias-bg-layer-3, rgba(0,0,0,.06)); color: var(--dsw-alias-label-secondary, #4b5563);\n}\n.sa-chip.is-ok { background: var(--dsw-alias-state-success-tertiary, rgba(34,197,94,.18)); color: var(--dsw-alias-state-success-primary, #15803d); }\n\n/* ── builder form ── */\n.sa-form { display: flex; flex-direction: column; gap: 12px; }\n.sa-field { display: flex; flex-direction: column; gap: 6px; }\n.sa-field > label { font-size: 12px; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-checks { display: flex; flex-wrap: wrap; gap: 10px; }\n.sa-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }\n.sa-row-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }\n.sa-subcard {\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08)); border-radius: 10px; padding: 12px;\n  background: var(--dsw-alias-settings-card-fill, rgba(0,0,0,.02));\n}\n\n/* ── dashboard chart ── */\n.sa-chart { display: flex; align-items: flex-end; gap: 8px; height: 110px; padding: 8px 4px 0; }\n.sa-chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }\n.sa-chart-bar { width: 100%; max-width: 34px; border-radius: 4px 4px 0 0; background: var(--dsw-alias-brand-primary, #4f46e5); min-height: 2px; }\n.sa-chart-bar.is-second { background: var(--dsw-alias-state-success-primary, #22c55e); }\n.sa-chart-label { font-size: 11px; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-legend { display: flex; gap: 14px; font-size: 12px; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }\n\n/* ── run timeline ── */\n.sa-steps { display: flex; flex-direction: column; gap: 0; }\n.sa-step { display: flex; gap: 10px; padding: 8px 0; }\n.sa-step-dot {\n  width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex: 0 0 auto;\n  background: var(--dsw-alias-state-idle-primary, #9ca3af);\n}\n.sa-step-dot.is-ok { background: var(--dsw-alias-state-success-primary, #22c55e); }\n.sa-step-dot.is-bad { background: var(--dsw-alias-state-error-primary, #ef4444); }\n.sa-step-main { flex: 1; display: flex; flex-direction: column; gap: 2px; }\n.sa-step-title { font-weight: 600; font-size: 13px; }\n";
+    var PANEL_CSS = ".sa-manager-host { height: 100%; min-height: 320px; display: flex; }\n.sa-panel {\n  display: flex; flex-direction: row; align-items: stretch; width: 100%; height: 100%;\n  font: var(--dsh-content-font-size, 13px)/1.6 var(--dsh-font-family-text, system-ui, sans-serif);\n  color: var(--dsw-alias-label-primary, #1f2328);\n  background: var(--dsw-alias-bg-base, transparent);\n}\n.sa-nav {\n  width: 152px; flex: 0 0 auto; overflow: auto; padding: 10px 8px;\n  border-right: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08));\n  display: flex; flex-direction: column; gap: 2px;\n}\n.sa-nav-item {\n  appearance: none; border: 0; background: transparent; cursor: pointer; text-align: left;\n  padding: 7px 10px; border-radius: 6px; font: inherit;\n  color: var(--dsw-alias-label-secondary, #4b5563);\n}\n.sa-nav-item:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.04)); }\n.sa-nav-item[aria-current=\"true\"] {\n  background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.06));\n  color: var(--dsw-alias-label-primary, #111); font-weight: 600;\n}\n.sa-nav-item:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #4f46e5); outline-offset: 1px; }\n.sa-main { flex: 1; min-width: 0; overflow: auto; padding: 14px; }\n.sa-view { display: flex; flex-direction: column; gap: 12px; }\n.sa-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }\n.sa-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--dsw-alias-state-idle-primary, #9ca3af); }\n.sa-dot[data-state=\"online\"] { background: var(--dsw-alias-state-success-primary, #22c55e); }\n.sa-dot[data-state=\"offline\"] { background: var(--dsw-alias-state-error-primary, #ef4444); }\n.sa-muted { color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-caption { color: var(--dsw-alias-label-caption, #9ca3af); font-size: 12px; }\n.sa-warn { color: var(--dsw-alias-state-warn-primary, #b45309); font-size: 12px; }\n.sa-addr { word-break: break-all; color: var(--dsw-alias-label-secondary, #4b5563); }\n.sa-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }\n.sa-card {\n  padding: 10px; border-radius: 8px; border: 1px solid var(--dsw-alias-settings-card-stroke, rgba(0,0,0,.08));\n  background: var(--dsw-alias-settings-card-fill, rgba(0,0,0,.02));\n}\n.sa-card b { display: block; font-size: 18px; font-weight: 600; }\n.sa-btn {\n  appearance: none; cursor: pointer; font: inherit; padding: 6px 12px; border-radius: 6px;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n  background: var(--dsw-alias-button-elevated-fill, transparent);\n  color: var(--dsw-alias-label-primary, #111);\n}\n.sa-btn:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.05)); }\n.sa-btn:disabled { cursor: not-allowed; opacity: .5; }\n.sa-btn[data-variant=\"primary\"] {\n  border-color: transparent; background: var(--dsw-alias-button-primary-fill, #4f46e5); color: #fff;\n}\n.sa-table { width: 100%; border-collapse: collapse; }\n.sa-table th, .sa-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.06)); vertical-align: top; }\n.sa-table th { color: var(--dsw-alias-label-tertiary, #6b7280); font-weight: 500; white-space: nowrap; }\n.sa-empty { padding: 24px 8px; text-align: center; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-trend { display: flex; flex-wrap: wrap; gap: 6px; }\n.sa-trend span { padding: 2px 6px; border-radius: 4px; background: var(--dsw-alias-bg-layer-2, rgba(0,0,0,.03)); color: var(--dsw-alias-label-secondary, #4b5563); font-size: 12px; }\n.sa-section-title { font-weight: 600; margin-top: 4px; }\n\n.sa-dev-log {\n  margin: 0; padding: 10px; border-radius: 8px; max-height: 260px; overflow: auto;\n  background: var(--dsw-alias-markdown-code-block, rgba(0,0,0,.04));\n  color: var(--dsw-alias-label-secondary, #4b5563);\n  font: var(--dsh-font-family-code, ui-monospace, monospace); font-size: 12px; white-space: pre-wrap; word-break: break-all;\n}\n\n.sa-list { display: flex; flex-direction: column; gap: 6px; }\n.sa-list-row {\n  padding: 6px 8px; border-radius: 6px;\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.06));\n}\n.sa-input {\n  width: 100%; padding: 6px 10px; border-radius: 6px; font: inherit;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n  background: var(--dsw-alias-bg-base, transparent); color: inherit;\n}\n.sa-textarea {\n  width: 100%; min-height: 150px; padding: 10px; border-radius: 8px;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n  background: var(--dsw-alias-markdown-code-block, rgba(0,0,0,.03));\n  color: inherit; font: var(--dsh-font-family-code, ui-monospace, monospace);\n  font-size: 12px; white-space: pre;\n}\n\n/* ── visual building blocks ── */\n.sa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }\n.sa-platform {\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08)); border-radius: 10px;\n  padding: 12px; display: flex; flex-direction: column; gap: 8px;\n  background: var(--dsw-alias-settings-card-fill, rgba(0,0,0,.02));\n}\n.sa-platform.is-bound { border-color: var(--dsw-alias-state-success-tertiary, rgba(34,197,94,.45)); }\n.sa-platform-head { display: flex; align-items: center; gap: 8px; }\n.sa-badge {\n  width: 28px; height: 28px; border-radius: 8px; flex: 0 0 auto;\n  display: inline-flex; align-items: center; justify-content: center;\n  font-size: 12px; font-weight: 600; color: #fff;\n  background: var(--dsw-alias-brand-primary, #4f46e5);\n}\n.sa-platform-name { flex: 1; font-weight: 600; }\n.sa-state { font-size: 12px; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-state.is-ok { color: var(--dsw-alias-state-success-primary, #16a34a); }\n.sa-platform-body { font-size: 12px; color: var(--dsw-alias-label-tertiary, #6b7280); min-height: 32px; }\n.sa-platform-foot { display: flex; gap: 8px; }\n\n.sa-qr-card {\n  margin-top: 12px; display: flex; gap: 18px; align-items: center; padding: 16px;\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08)); border-radius: 12px;\n  background: var(--dsw-alias-bg-layer-2, rgba(0,0,0,.02));\n}\n.sa-qr-box {\n  width: 200px; height: 200px; flex: 0 0 auto; border-radius: 10px; overflow: hidden;\n  background: #fff; display: flex; align-items: center; justify-content: center;\n  border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.12));\n}\n.sa-qr-img { width: 100%; height: 100%; object-fit: contain; }\n.sa-qr-placeholder { font-size: 12px; color: #9ca3af; }\n.sa-qr-info { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }\n.sa-qr-title { font-weight: 600; }\n.sa-qr-hint { font-size: 12px; color: var(--dsw-alias-label-secondary, #4b5563); }\n\n.sa-media-card {\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08)); border-radius: 10px;\n  overflow: hidden; background: var(--dsw-alias-settings-card-fill, rgba(0,0,0,.02));\n  display: flex; flex-direction: column;\n}\n.sa-thumb {\n  width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;\n  background: var(--dsw-alias-bg-skeleton, rgba(0,0,0,.06));\n}\n.sa-thumb-empty {\n  width: 100%; aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center;\n  background: var(--dsw-alias-bg-skeleton, rgba(0,0,0,.06)); color: #9ca3af; font-size: 12px;\n}\n.sa-media-body { padding: 10px; display: flex; flex-direction: column; gap: 6px; }\n.sa-media-title { font-weight: 600; font-size: 13px; line-height: 1.4; max-height: 2.8em; overflow: hidden; }\n.sa-media-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-chip {\n  font-size: 11px; padding: 1px 6px; border-radius: 999px;\n  background: var(--dsw-alias-bg-layer-3, rgba(0,0,0,.06)); color: var(--dsw-alias-label-secondary, #4b5563);\n}\n.sa-chip.is-ok { background: var(--dsw-alias-state-success-tertiary, rgba(34,197,94,.18)); color: var(--dsw-alias-state-success-primary, #15803d); }\n\n/* ── builder form ── */\n.sa-form { display: flex; flex-direction: column; gap: 12px; }\n.sa-field { display: flex; flex-direction: column; gap: 6px; }\n.sa-field > label { font-size: 12px; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-checks { display: flex; flex-wrap: wrap; gap: 10px; }\n.sa-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }\n.sa-row-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }\n.sa-subcard {\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08)); border-radius: 10px; padding: 12px;\n  background: var(--dsw-alias-settings-card-fill, rgba(0,0,0,.02));\n}\n\n/* ── run timeline ── */\n.sa-steps { display: flex; flex-direction: column; gap: 0; }\n.sa-step { display: flex; gap: 10px; padding: 8px 0; }\n.sa-step-dot {\n  width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex: 0 0 auto;\n  background: var(--dsw-alias-state-idle-primary, #9ca3af);\n}\n.sa-step-dot.is-ok { background: var(--dsw-alias-state-success-primary, #22c55e); }\n.sa-step-dot.is-bad { background: var(--dsw-alias-state-error-primary, #ef4444); }\n.sa-step-main { flex: 1; display: flex; flex-direction: column; gap: 2px; }\n.sa-step-title { font-weight: 600; font-size: 13px; }\n\n/* ── dashboard: chart ── */\n.sa-chart { display: flex; align-items: flex-end; gap: 8px; height: 156px; padding: 4px 2px 0; }\n.sa-chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; gap: 4px; min-width: 0; }\n.sa-chart-value { font-size: 11px; line-height: 14px; height: 14px; color: var(--dsw-alias-label-tertiary, #6b7280); }\n.sa-chart-stack {\n  flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 3px;\n  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.1));\n}\n.sa-chart-bar { width: 13px; border-radius: 4px 4px 0 0; background: var(--dsw-alias-brand-primary, #4f46e5); }\n.sa-chart-bar.is-second { background: var(--dsw-alias-state-success-primary, #22c55e); }\n.sa-chart-label { font-size: 11px; color: var(--dsw-alias-label-tertiary, #6b7280); white-space: nowrap; }\n.sa-chart-label.is-today { color: var(--dsw-alias-label-primary, #111); font-weight: 600; }\n.sa-chart-empty {\n  display: flex; align-items: center; justify-content: center; height: 120px;\n  color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 12px;\n}\n\n/* ── dashboard: distribution bars ── */\n.sa-dist { display: flex; flex-direction: column; gap: 8px; }\n.sa-dist-row { display: flex; align-items: center; gap: 10px; }\n.sa-dist-name { width: 76px; font-size: 12px; color: var(--dsw-alias-label-secondary, #4b5563); }\n.sa-dist-track { flex: 1; height: 10px; border-radius: 5px; background: var(--dsw-alias-bg-layer-3, rgba(0,0,0,.06)); overflow: hidden; }\n.sa-dist-fill { height: 100%; border-radius: 5px; background: var(--dsw-alias-brand-primary, #4f46e5); min-width: 3px; }\n.sa-dist-value { width: 44px; text-align: right; font-size: 12px; color: var(--dsw-alias-label-tertiary, #6b7280); }\n\n/* ── dashboard: header strip ── */\n.sa-strip {\n  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;\n  padding: 10px 12px; border-radius: 10px;\n  border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08));\n  background: var(--dsw-alias-settings-card-fill, rgba(0,0,0,.02));\n}\n.sa-strip-main { display: flex; align-items: center; gap: 8px; font-weight: 600; }\n.sa-strip-sub { display: flex; align-items: center; gap: 8px; color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 12px; margin-left: auto; }\n.sa-spacer { height: 4px; }\n";
 
 // ---- lib/panel/dom.js ----
 // SA Manager panel — tiny DOM helpers (no framework, no external deps).
@@ -257,7 +257,7 @@ function renderArea(ctx, config) {
 
 
 // ---- lib/panel/views/dashboard.js ----
-// 工作台 — 后端健康、今日实况、近 7 天趋势、平台分布、最近运行。
+// 工作台 — 一行状态条、四个今日指标、近 7 天趋势、平台分布、最近运行。
 
 function renderDashboard(ctx) {
   var api = ctx.api;
@@ -267,17 +267,20 @@ function renderDashboard(ctx) {
   var timer = null;
   var disposed = false;
 
-  // 当前会话
-  var sessionDot = h("span", { className: "sa-dot", "data-state": "idle" });
-  var sessionMeta = h("span", { className: "sa-caption" }, "");
-  root.appendChild(h("div", { className: "sa-platform" }, [
-    h("div", { className: "sa-platform-head" }, [sessionDot, h("span", { className: "sa-platform-name" }, "当前会话")]),
-    h("div", { className: "sa-platform-body" }, [sessionMeta])
+  // ── 顶部状态条：后端 + 当前会话 ──
+  var dot = h("span", { className: "sa-dot", "data-state": "idle" });
+  var stateText = h("span", null, "检测中");
+  var latency = h("span", { className: "sa-muted" }, "");
+  var sessionText = h("span", null, "—");
+  var refreshBtn = h("button", { type: "button", className: "sa-btn", onClick: refresh }, "刷新");
+  root.appendChild(h("div", { className: "sa-strip" }, [
+    h("span", { className: "sa-strip-main" }, [dot, stateText, latency]),
+    h("span", { className: "sa-strip-sub" }, [h("span", null, "会话"), sessionText, refreshBtn])
   ]));
+
   function applySession(s) {
-    if (!s || s.available === false) { sessionDot.dataset.state = "idle"; sessionMeta.textContent = "宿主未提供会话上下文"; return; }
-    sessionMeta.textContent = [s.title || "(未命名会话)", typeof s.messageCount === "number" ? s.messageCount + " 条消息" : null, s.running ? "运行中" : "空闲"].filter(Boolean).join(" · ");
-    sessionDot.dataset.state = s.running ? "online" : "idle";
+    if (!s || s.available === false) { sessionText.textContent = "宿主未提供"; return; }
+    sessionText.textContent = (s.title || "(未命名)") + (s.running ? " · 运行中" : " · 空闲");
   }
   applySession(ctx.sessionContext);
   if (events && typeof events.on === "function") {
@@ -285,28 +288,23 @@ function renderDashboard(ctx) {
     disposers.push(events.on("agent-status", function (x) { if (x) applySession({ available: true, running: x.running === true }); }));
   }
 
-  // 健康
-  var dot = h("span", { className: "sa-dot", "data-state": "idle" });
-  var stateText = h("span", null, "检测中");
-  var latency = h("span", { className: "sa-muted" }, "");
-  var refreshBtn = h("button", { type: "button", className: "sa-btn", onClick: refresh }, "刷新");
-  root.appendChild(h("div", { className: "sa-row" }, [dot, stateText, latency, refreshBtn]));
-
-  // 今日四个指标
+  // ── 今日指标 ──
   var cards = h("div", { className: "sa-cards" });
-  function card(label) {
-    var value = h("b", null, "-");
-    cards.appendChild(h("div", { className: "sa-card" }, [value, h("span", { className: "sa-caption" }, label)]));
-    return value;
+  function card(label, hint) {
+    var value = h("b", null, "0");
+    var note = h("div", { className: "sa-caption" }, hint || "");
+    cards.appendChild(h("div", { className: "sa-card" }, [value, h("span", { className: "sa-caption" }, label), note]));
+    return { value: value, note: note };
   }
-  var cTodayRuns = card("今日运行");
-  var cTodaySaved = card("今日新增素材");
-  var cFailRate = card("失败率");
-  var cScheduled = card("定时任务");
+  var cRuns = card("今日运行", "vs 昨日");
+  var cSaved = card("今日新增素材", "入库条数");
+  var cFail = card("失败率", "全部历史");
+  var cSched = card("定时任务", "已启用");
   root.appendChild(cards);
 
-  // 近 7 天
-  root.appendChild(h("div", { className: "sa-section-title" }, "近 7 天"));
+  // ── 近 7 天 ──
+  var chartTitle = h("div", { className: "sa-row" }, [h("span", { className: "sa-section-title", style: { margin: 0 } }, "近 7 天")]);
+  root.appendChild(chartTitle);
   root.appendChild(h("div", { className: "sa-legend" }, [
     h("span", null, [h("i", { style: { background: "var(--dsw-alias-brand-primary, #4f46e5)" } }), "发现"]),
     h("span", null, [h("i", { style: { background: "var(--dsw-alias-state-success-primary, #22c55e)" } }), "写入"])
@@ -314,27 +312,53 @@ function renderDashboard(ctx) {
   var chart = h("div", { className: "sa-chart" });
   root.appendChild(chart);
 
-  // 平台分布
+  // ── 平台分布 ──
   root.appendChild(h("div", { className: "sa-section-title" }, "素材平台分布"));
-  var platformRow = h("div", { className: "sa-row" });
-  root.appendChild(platformRow);
+  var dist = h("div", { className: "sa-dist" });
+  root.appendChild(dist);
 
+  // ── 最近运行 ──
   root.appendChild(h("div", { className: "sa-section-title" }, "最近运行"));
   var recent = h("div", { className: "sa-list" });
   root.appendChild(recent);
 
   function renderChart(days) {
     clear(chart);
-    var peak = 1;
-    (days || []).forEach(function (d) { peak = Math.max(peak, d.found, d.saved); });
-    (days || []).forEach(function (d) {
-      var label = d.day.slice(5).replace("-", "/");
+    var list = days || [];
+    var peak = 0;
+    list.forEach(function (d) { peak = Math.max(peak, d.found, d.saved, d.runs); });
+    if (peak === 0) {
+      chart.appendChild(h("div", { className: "sa-chart-empty" }, "近 7 天还没有采集记录"));
+      return;
+    }
+    var todayKey = list.length ? list[list.length - 1].day : "";
+    list.forEach(function (d) {
+      var stackH = 96;
+      function barHeight(value, kind) {
+        if (!value) return "0px";
+        return Math.max(4, Math.round((value / peak) * stackH)) + "px";
+      }
+      var isToday = d.day === todayKey;
       chart.appendChild(h("div", { className: "sa-chart-col" }, [
-        h("div", { className: "sa-row-inline", style: { alignItems: "flex-end", gap: "2px", height: "100%" } }, [
-          h("div", { className: "sa-chart-bar", style: { height: Math.round((d.found / peak) * 80) + "%" } }),
-          h("div", { className: "sa-chart-bar is-second", style: { height: Math.round((d.saved / peak) * 80) + "%" } })
+        h("span", { className: "sa-chart-value" }, d.found || d.saved ? String(d.found) : ""),
+        h("div", { className: "sa-chart-stack" }, [
+          h("div", { className: "sa-chart-bar", style: { height: barHeight(d.found) }, title: "发现 " + d.found }),
+          h("div", { className: "sa-chart-bar is-second", style: { height: barHeight(d.saved) }, title: "写入 " + d.saved })
         ]),
-        h("span", { className: "sa-chart-label" }, label)
+        h("span", { className: "sa-chart-label" + (isToday ? " is-today" : "") }, d.day.slice(5).replace("-", "/"))
+      ]));
+    });
+  }
+
+  function renderDist(rows) {
+    clear(dist);
+    if (!rows || rows.length === 0) { dist.appendChild(h("div", { className: "sa-empty" }, "还没有素材。")); return; }
+    var peak = rows.reduce(function (m, r) { return Math.max(m, r.n); }, 0) || 1;
+    rows.forEach(function (r) {
+      dist.appendChild(h("div", { className: "sa-dist-row" }, [
+        h("span", { className: "sa-dist-name" }, r.platform),
+        h("div", { className: "sa-dist-track" }, [h("div", { className: "sa-dist-fill", style: { width: Math.round((r.n / peak) * 100) + "%" } })]),
+        h("span", { className: "sa-dist-value" }, String(r.n))
       ]));
     });
   }
@@ -353,17 +377,17 @@ function renderDashboard(ctx) {
       if (disposed) return;
       var m = res.ok && res.data ? res.data : null;
       if (!m) return;
-      cTodayRuns.textContent = String(m.today.runs);
-      cTodaySaved.textContent = String(m.today.saved);
-      cFailRate.textContent = m.total.runs === 0 ? "—" : (m.total.failureRate + "%");
-      cScheduled.textContent = String(m.scheduled);
+      var yesterday = m.days.length >= 2 ? m.days[m.days.length - 2].runs : 0;
+      cRuns.value.textContent = String(m.today.runs);
+      cRuns.note.textContent = "昨日 " + yesterday;
+      cSaved.value.textContent = String(m.today.saved);
+      cSaved.note.textContent = "发现 " + m.today.found;
+      cFail.value.textContent = m.total.runs === 0 ? "—" : (m.total.failureRate + "%");
+      cFail.note.textContent = "共 " + m.total.runs + " 次运行";
+      cSched.value.textContent = String(m.scheduled);
+      cSched.note.textContent = m.scheduled === 0 ? "未配置定时" : "已启用";
       renderChart(m.days);
-      clear(platformRow);
-      if (!m.byPlatform || m.byPlatform.length === 0) {
-        platformRow.appendChild(h("span", { className: "sa-caption" }, "还没有素材。"));
-      } else {
-        m.byPlatform.forEach(function (x) { platformRow.appendChild(h("span", { className: "sa-chip" }, x.platform + " " + x.n)); });
-      }
+      renderDist(m.byPlatform);
     });
     api.runs(8).then(function (res) {
       if (disposed) return;

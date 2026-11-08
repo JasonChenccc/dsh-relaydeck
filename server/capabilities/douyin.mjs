@@ -19,70 +19,57 @@ function parseCount(text) {
 
 /** 在页面里运行：把封面图对应到作品卡片。 */
 function extractCards() {
-  const out = [];
-  const seen = new Set();
-  const covers = [];
-  for (const img of document.querySelectorAll("img")) {
-    const src = img.getAttribute("src") || "";
-    if (!src.includes("douyinpic")) continue;
+  // 作品网格是一个容器，它的每个直接子元素各含一张"大封面"。
+  // 尺寸过滤很关键：聊天/推荐等列表里也有小头像，只有作品封面是大图。
+  const bigCover = (card) => {
+    const img = card.querySelector ? card.querySelector('img[src*="douyinpic"]') : null;
+    if (!img) return null;
     const r = img.getBoundingClientRect();
-    if (r.width < 96 || r.height < 64) continue;
-    covers.push({ img, src, top: r.top });
+    if (r.width < 140 || r.height < 90) return null;
+    return { img: img, w: Math.round(r.width), h: Math.round(r.height) };
+  };
+
+  let best = null;
+  for (const el of document.querySelectorAll("ul, div")) {
+    const kids = Array.from(el.children);
+    if (kids.length < 2 || kids.length > 80) continue;
+    const cards = kids.filter((k) => bigCover(k));
+    if (cards.length < 2) continue;
+    // 子元素尺寸一致性：作品卡片彼此几乎等大，聊天条目则参差不齐
+    const sizes = cards.map((k) => bigCover(k).w);
+    const spread = Math.max.apply(null, sizes) - Math.min.apply(null, sizes);
+    const score = cards.length * 100 - spread;
+    if (!best || score > best.score) best = { cards: cards, score: score };
   }
-  covers.sort((a, b) => a.top - b.top);
+  if (!best) return [];
 
-  const findHref = (node) => {
-    let up = node;
-    for (let i = 0; i < 9 && up; i += 1) {
-      if (up.querySelector) {
-        const a = up.querySelector('a[href*="/video/"]');
-        if (a) return { holder: up, href: a.getAttribute("href") || "" };
-      }
-      up = up.parentElement;
-    }
-    return null;
-  };
-  const findText = (node) => {
-    let up = node;
-    for (let i = 0; i < 7 && up; i += 1) {
-      const t = (up.innerText || "").replace(/\s+/g, " ").trim();
-      if (t.length > 3 && t.length < 300) return { holder: up, text: t };
-      up = up.parentElement;
-    }
-    return null;
+  const objectKey = (src) => {
+    const m = String(src).match(/tos-cn-[a-z0-9-]+\/([A-Za-z0-9_-]{8,})/);
+    return m ? m[1] : "";
   };
 
-  for (const cover of covers) {
-    const linked = findHref(cover.img);
-    const textual = findText(cover.img);
-    const holder = (linked && linked.holder) || (textual && textual.holder) || null;
-    if (!holder) continue;
-    const text = (holder.innerText || "").replace(/\s+/g, " ").trim();
-    const href = linked ? linked.href : "";
+  const out = [];
+  for (const card of best.cards) {
+    const cover = bigCover(card);
+    if (!cover) continue;
+    const src = cover.img.getAttribute("src") || "";
+    // 只认卡片自身的链接。父元素回退会让所有卡片共用同一个链接（之前就是这个 bug）。
+    const link = card.querySelector('a[href*="/video/"]');
+    const href = link ? link.getAttribute("href") || "" : "";
     const idMatch = href.match(/\/video\/(\d+)/);
-    const key = idMatch ? idMatch[1] : cover.src.slice(0, 90);
-    if (seen.has(key)) continue;
-    seen.add(key);
+    const key = objectKey(src);
+
+    const text = (card.innerText || "").replace(/\s+/g, " ").trim();
     const first = text.split(" ")[0] || "";
     const numeric = /^[\d.]+\s*(万|w|W)?$/.test(first);
     out.push({
-      item_id: idMatch ? idMatch[1] : "",
-      cover_url: cover.src,
+      item_id: idMatch ? idMatch[1] : (key ? "img:" + key : ""),
+      cover_url: src,
       like_text: numeric ? first : "",
-      desc: numeric ? text.slice(first.length).trim() : text
+      desc: numeric ? text.slice(first.length).trim() : text,
+      w: cover.w,
+      h: cover.h
     });
-  }
-
-  // 兜底：给还缺 id 的条目，按 DOM 顺序分配页面上未使用的作品链接。
-  const pageLinks = Array.from(document.querySelectorAll('a[href*="/video/"]'))
-    .map((a) => { const m = (a.getAttribute("href") || "").match(/\/video\/(\d+)/); return m ? m[1] : null; })
-    .filter(Boolean);
-  const used = new Set(out.filter((x) => x.item_id).map((x) => x.item_id));
-  const spare = pageLinks.filter((id) => !used.has(id));
-  let cursor = 0;
-  for (const entry of out) {
-    if (entry.item_id) continue;
-    if (cursor < spare.length) { entry.item_id = spare[cursor]; cursor += 1; }
   }
   return out;
 }
