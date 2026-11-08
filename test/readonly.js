@@ -25,6 +25,17 @@ for (const [name, check] of [
   assert(check(res.data), name + " returns the documented shape");
 }
 
+heading("platforms");
+const plats = await fetch("http://127.0.0.1:" + PORT + "/api/platforms", { signal: AbortSignal.timeout(5000) }).then((r) => r.json());
+const ids = plats.items.map((p) => p.id).sort();
+console.log(ids.join(", "));
+assert(ids.length === 5, "five platforms are declared");
+assert(["douyin","kuaishou","shipinhao","tiktok","xhs"].every((id) => ids.includes(id)), "all five platform ids present");
+
+heading("login surface");
+const logins = await fetch("http://127.0.0.1:" + PORT + "/api/login", { signal: AbortSignal.timeout(5000) }).then((r) => r.json());
+assert(Array.isArray(logins.items), "login list is an array");
+
 heading("capability stages");
 const caps = (await tools.get("relaydeck_capabilities").execute({}, {})).data.items;
 const stages = new Set(caps.map((c) => c.stage));

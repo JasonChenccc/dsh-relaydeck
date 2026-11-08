@@ -9,6 +9,9 @@ import { openDatabase, nowIso } from "./db.mjs";
 import { log, errorText } from "./log.mjs";
 import { createRouter } from "./api/routes.mjs";
 import "./capabilities/core.mjs";
+import "./actions/download.mjs";
+import "./capabilities/douyin.mjs";
+import { closeAllLogins } from "./browser/login.mjs";
 
 const VERSION = "0.1.0";
 const here = dirname(fileURLToPath(import.meta.url));
@@ -24,7 +27,7 @@ const host = "127.0.0.1";
 const startedAt = Date.now();
 
 const db = openDatabase(join(dataDir, "relaydeck.db"));
-const handle = createRouter({ db, version: VERSION, startedAt });
+const handle = createRouter({ db, version: VERSION, startedAt, dataDir });
 
 const server = createServer((req, res) => {
   handle(req, res).catch((error) => {
@@ -41,6 +44,7 @@ server.listen(port, host, () => {
 
 function shutdown(signal) {
   log("info", "shutting down", { signal });
+  void closeAllLogins().catch(() => {});
   server.close(() => { try { db.close(); } catch (e) {} process.exit(0); });
   setTimeout(() => process.exit(0), 2000).unref();
 }

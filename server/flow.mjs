@@ -40,7 +40,7 @@ function finishStep(db, stepId, state, outCount, detail, error) {
  * Execute one flow.
  * @returns the finished run row, including per-stage step records.
  */
-export async function executeFlow({ db, spec, flow, trigger }) {
+export async function executeFlow({ db, spec, flow, trigger, dataDir }) {
   const parsed = validateSpec(spec);
   const flowId = flow ? flow.id : null;
   const flowName = flow ? flow.name : (spec && spec.name ? String(spec.name) : "(inline)");
@@ -65,7 +65,7 @@ export async function executeFlow({ db, spec, flow, trigger }) {
       if (capability.stage !== stage) {
         throw new Error(capabilityId + " is a " + capability.stage + " capability but was used as " + stage);
       }
-      const outcome = await capability.run({ db, params: node.params || {}, items, run });
+      const outcome = await capability.run({ db, params: node.params || {}, items, run, dataDir });
       const produced = Array.isArray(outcome) ? outcome : items;
       const summary = Array.isArray(outcome) ? null : (outcome || {});
       const detail = summary ? String(summary.detail || "") : "";

@@ -5,6 +5,7 @@
 //
 //   node scripts/build-client.mjs           # one build
 //   node scripts/build-client.mjs --watch   # rebuild on save (300 ms debounce)
+// The build performs a syntax check on the generated bundle before writing it.
 import { readFileSync, writeFileSync, watch } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -68,6 +69,9 @@ function build() {
     "});",
     ""
   ].join("\n");
+  // Fail the build on a syntax error instead of shipping a broken bundle.
+  try { new Function("window", "require", out); }
+  catch (error) { throw new Error("generated bundle has a syntax error: " + (error && error.message ? error.message : error)); }
   writeFileSync(join(root, "client.js"), out, "utf8");
   return out.length;
 }

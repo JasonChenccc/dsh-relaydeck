@@ -4,6 +4,8 @@ import { nowIso, counts, schemaVersion } from "../db.mjs";
 import { list as listCapabilities } from "../capabilities/index.mjs";
 import { executeFlow, readRun, readFlow, validateSpec } from "../flow.mjs";
 import { errorText } from "../log.mjs";
+import { platform, platformIds } from "../platforms.mjs";
+import { startLogin, pollLogin, cancelLogin, listLogins } from "../browser/login.mjs";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 
@@ -36,7 +38,7 @@ function match(pattern, parts) {
   return params;
 }
 
-export function createRouter({ db, version, startedAt }) {
+export function createRouter({ db, version, startedAt, dataDir }) {
   const routes = [];
   const on = (method, pattern, handler) => routes.push({ method, parts: pattern.split("/").filter(Boolean), handler });
 
@@ -88,7 +90,7 @@ export function createRouter({ db, version, startedAt }) {
   on("POST", "/api/flows/:id/run", async (params) => {
     const flow = readFlow(db, Number(params.id));
     if (!flow) return { statusCode: 404, payload: { error: "flow not found" } };
-    const run = await executeFlow({ db, spec: flow.spec, flow, trigger: "manual" });
+    const run = await executeFlow({ db, spec: flow.spec, flow, trigger: "manual", dataDir });
     return { payload: run };
   });
 
@@ -112,6 +114,21 @@ export function createRouter({ db, version, startedAt }) {
       : db.prepare("SELECT * FROM artifacts ORDER BY id DESC LIMIT ?").all(limit);
     return { items: rows };
   });
+
+  // ── interactive login ──
+  on("GET", "/api/platforms", () => ({ items: platformIds().map((id) => { const p = platform(id); return { id: p.id, title: p.title, home: p.home, hint: p.hint }; }) }));
+
+  on("GET", "/api/login", () => ({ items: listLogins() }));
+
+  on("POST", "/api/login", async (_params, req) => {
+    const body = await readJson(req);
+    const session = await startLogin(db, String(body.platform || ""), { baseDir: dataDir });
+    return { statusCode: 201, payload: session };
+  });
+
+  on("GET", "/api/login/:id", (params) => pollLogin(db, params.id));
+
+  on("POST", "/api/login/:id/cancel", (params) => cancelLogin(params.id));
 
   on("GET", "/api/bindings", () => ({ items: db.prepare("SELECT id, platform, label, nickname, state, proxy, last_used_at, created_at FROM bindings ORDER BY id DESC").all() }));
 

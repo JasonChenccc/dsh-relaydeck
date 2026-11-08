@@ -63,6 +63,7 @@ dsh-relaydeck/
 * **Storage**: `node:sqlite` (built in).
 * **HTTP**: `node:http` (built in).
 * **Panel**: hand-written DOM, DSH design tokens, no framework.
+* **Platform access**: a real browser is driven over CDP (Node's built-in WebSocket). The page signs its own requests, so RelayDeck does not reimplement any platform's signing algorithm.
 * **Lifecycle**: the plugin spawns the backend through `ctx.subprocess`; disposing the plugin reaps the whole process range.
 
 The panel runs on the DSH origin, so it reaches the backend through the same-origin route `/dsh-relaydeck/proxy` — never by calling the loopback port directly.
@@ -77,7 +78,7 @@ The panel runs on the DSH origin, so it reaches the backend through the same-ori
 | 流程 Flows | Flow list, run/delete, create from a spec |
 | 运行 Runs | Run history; click a run to see its step-by-step trace |
 | 素材 Library | Artifacts produced by runs |
-| 账号 Accounts | Platform bindings / login state |
+| 账号 Accounts | QR login per platform + recorded bindings |
 | 能力 Capabilities | Every registered capability, grouped by stage |
 | 开发调试 Dev | Reload / repack / restart helpers |
 | 关于 About | Version, license, disclaimer |
@@ -88,9 +89,9 @@ The panel runs on the DSH origin, so it reaches the backend through the same-ori
 
 All tools are namespaced `relaydeck_*`.
 
-**Read** — `relaydeck_ping`, `relaydeck_config_get`, `relaydeck_status`, `relaydeck_capabilities`, `relaydeck_flow_list`, `relaydeck_run_list`, `relaydeck_run_get`, `relaydeck_artifact_list`, `relaydeck_binding_list`
+**Read** — `relaydeck_ping`, `relaydeck_config_get`, `relaydeck_status`, `relaydeck_capabilities`, `relaydeck_flow_list`, `relaydeck_run_list`, `relaydeck_run_get`, `relaydeck_artifact_list`, `relaydeck_binding_list`, `relaydeck_platform_list`, `relaydeck_login_list`
 
-**Write** — `relaydeck_start`, `relaydeck_stop`, `relaydeck_flow_create`, `relaydeck_flow_run`, `relaydeck_flow_delete`
+**Write** — `relaydeck_start`, `relaydeck_stop`, `relaydeck_flow_create`, `relaydeck_flow_run`, `relaydeck_flow_delete`, `relaydeck_login_start`, `relaydeck_login_status`
 
 ---
 
@@ -142,10 +143,10 @@ set ELECTRON_RUN_AS_NODE=1 && "D:\dsh\DeepSeek Harness.exe" test/smoke.js
 | Milestone | State |
 |---|---|
 | **M0** skeleton: backend, schema, flow engine, lifecycle, panel | ✅ done |
-| **M1** first real platform capability (search → filter → store → download) | ⏳ next |
+| **M1** browser channel + QR login + first platform capability | ✅ done |
 | **M2** flow scheduling, retry, replay | ⏳ |
 | **M3** cross-platform relay (collect on one platform, publish to another) | ⏳ |
-| **M4** browser-based QR login | ⏳ |
+| **M2** 小红书 / 快手 / 视频号 / TikTok capabilities | ⏳ |
 | **M5** more platforms | ⏳ |
 
 ---
