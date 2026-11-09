@@ -1,3 +1,23 @@
+> ## ✅ 阶段性工作已经完成（Phase 0 – Phase 7）
+>
+> 截至 **2026-11-09**，以下工作已完成并通过自测（每项均有实测证据，详见 `AGENTS.md`）：
+>
+> | 能力 | 状态 |
+> |---|---|
+> | 12 个板块的原生界面（真实数据，无模拟） | ✅ |
+> | 抖音：登录 / 作品提取（5/5）/ 监控闭环 / 账号统计 | ✅ |
+> | 链接下载（粘贴链接直下，实测 995 KB 真实视频） | ✅ |
+> | 通知（Webhook / 钉钉 / 飞书，实测收发） | ✅ |
+> | 发布准备（上传素材 + 自动填标题正文，人工点发布） | ✅ |
+> | 评论 / 弹幕采集 | ⚠️ 机制就绪，未在非空数据上验证 |
+> | 自动评论 | ✅ 仅准备回复，**不自动发送**（刻意的风险限制） |
+> | 风控汇总 / CSV 导出 | ✅ |
+> | 6 项回归 | ✅ 全绿 |
+>
+> **尚未实现**：抖音以外的平台采集能力（小红书 / 快手 / 视频号 / TikTok 只返回 `unsupported`）。
+>
+> 交接请先读 `AGENTS.md`（执行手册：约束、命令、架构、进度表、已知坑）。
+
 # RelayDeck
 
 **A DSH-native content relay workbench.** Declare a flow — *source → filters → actions* — and it collects, narrows, stores and moves content for you. Every execution is traced and replayable.
