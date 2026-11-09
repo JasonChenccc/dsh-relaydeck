@@ -15,9 +15,27 @@
 https://raw.githubusercontent.com/JasonChenccc/dsh-relaydeck/main/market/index.json
 ```
 
+镜像（dsh 抓取索引源的超时是 **15 秒**；jsDelivr 走 CDN，国内通常更稳）：
+
+```
+https://cdn.jsdelivr.net/gh/JasonChenccc/dsh-relaydeck@main/market/index.json
+```
+
 ## 在 DSH 里添加
 
-**设置 → 插件市场 → 索引源（indexes）** 里加入上面的 URL，刷新后即可在市场里搜到 **RelayDeck**（关键词：抖音、小红书、采集、下载、发布）。
+**添加索引源之前，必须先启用一个默认禁用的可选 bundle**，否则界面里根本没有入口：
+
+1. 打开**插件页** →「**实验性插件**」旁的「**更多**」→ 启用「**自定义插件市场**」。
+   该 bundle（`@deepseek-ai/dsh-experimental-plugin-market-bundle`）随包默认禁用；
+   启用后插件页会多出「**已安装**」和「**发现**」两个标签页。
+2. 切到「**发现**」标签页 →「**添加索引源**」，填入上面的 URL。
+3. 刷新后即可搜到 **RelayDeck**（关键词：抖音、小红书、采集、下载、发布）。
+
+> **索引源只能由用户手动添加。** `dsh-plugin-market` 的工具描述原文：
+> "Only the user can add or remove index sources." —— agent 无法代劳。
+>
+> 官方**没有**任何默认索引目录：`indexes` 配置默认是空数组，所以不存在"向官方索引仓库提 PR"
+> 这条路。官方 README 的原话是「目前没有官方插件市场；发现标签页只列出用户添加的索引源」。
 
 ## 更新索引
 

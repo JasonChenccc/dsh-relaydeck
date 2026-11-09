@@ -28,6 +28,38 @@ dsh-relaydeck   ·   panel label: RelayDeck   ·   entry id: dsh-relaydeck
 
 ---
 
+## Install
+
+RelayDeck is a **plugin package for DeepSeek Harness** — not a standalone app. Install it into an existing DSH profile:
+
+```powershell
+dsh plugin --profile <your-profile> add https://github.com/JasonChenccc/dsh-relaydeck/releases/download/v0.1.1/dsh-relaydeck-0.1.1.tgz
+```
+
+`dsh plugin add` creates the profile when it does not exist yet, and registers the plugin in that
+profile's `dsh.profile.bundles` for you — no manual editing. **Restart DSH**; the *RelayDeck* entry
+then appears in the sidebar.
+
+Confirm the plugin layer mounted:
+
+```powershell
+dsh --profile <your-profile> --dump-config | findstr "# == dsh-relaydeck"
+```
+
+> `--profile desktop` is owned by the Electron app and refuses `--dump-config`
+> (`profile "desktop" is managed exclusively by the Electron application`).
+> Use any other profile name for CLI checks.
+
+**Requirements** — DSH with its bundled Node ≥ 22 (the backend uses `node:sqlite`); Windows, macOS or
+Linux; about 111 KB, no Python and no extra runtime.
+
+pnpm warns about unresolved peer dependencies (`@deepseek-ai/cordis`, `dsh-tools`, `schemastery`)
+during install. That is expected — DSH resolves them from its own runtime, and the plugin imports
+cleanly (`--dump-config-schema` exits 0).
+
+Installing from a downloaded `.tgz` by path also works, but it records an absolute `file:` path in
+your profile, so preferring the URL above keeps the install valid if the file moves.
+
 ## The idea
 
 Most content tools are organised as feature pages: an account page, a monitor page, a publish page. You click through them one at a time.
@@ -97,22 +129,23 @@ The panel runs on the DSH origin, so it reaches the backend through the same-ori
 | 看板 Dashboard | Backend health, flow/run/artifact counts, most recent runs, current DSH session |
 | 流程 Flows | Flow list, run/delete, create from a spec |
 | 运行 Runs | Run history; click a run to see its step-by-step trace |
+| 素材 Library | Artifacts produced by runs |
+| 账号 Accounts | QR login per platform + recorded bindings |
+| 能力 Capabilities | Every registered capability, grouped by stage |
+| 开发调试 Dev | Reload / repack / restart helpers |
+| 关于 About | Version, license, disclaimer |
+
 ### Relay chain
 
-``
+```
 <platform>.search  →  core.stat / core.contains / core.limit / core.dedupe
                   →  core.store  →  core.download
                   →  core.publishPlan  →  <platform>.prepareDraft
 ```
 
 The last step stops short of clicking publish: it attaches media and fills the
-fields in the platform\u2019s own creator UI, then leaves the window open for a human
+fields in the platform's own creator UI, then leaves the window open for a human
 to review and submit.
-| 素材 Library | Artifacts produced by runs |
-| 账号 Accounts | QR login per platform + recorded bindings |
-| 能力 Capabilities | Every registered capability, grouped by stage |
-| 开发调试 Dev | Reload / repack / restart helpers |
-| 关于 About | Version, license, disclaimer |
 
 ---
 
@@ -190,9 +223,8 @@ set ELECTRON_RUN_AS_NODE=1 && "D:\dsh\DeepSeek Harness.exe" test/smoke.js
 |---|---|
 | **M0** skeleton: backend, schema, flow engine, lifecycle, panel | ✅ done |
 | **M1** browser channel + QR login + first platform capability | ✅ done |
-| **M2** flow scheduling, retry, replay | ⏳ |
-| **M3** cross-platform relay: search → filter → store → download → publish plan → prepare draft | ✅ done |
 | **M2** all five platform search capabilities | ✅ done |
+| **M3** cross-platform relay: search → filter → store → download → publish plan → prepare draft | ✅ done |
 | **M4** scheduler (interval + cron), retry / replay | ✅ done |
 | **M5** per-platform response/selector tuning against live sessions | ⏳ needs your account |
 

@@ -1,6 +1,6 @@
 {
   "name": "dsh-relaydeck",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "RelayDeck — a DSH-native content relay workbench. Flows (source → filters → actions) that collect, transform and move content across platforms; runs are traced and replayable. Self-contained: ships its own Node backend, no external runtime.",
   "type": "module",
   "main": "lib/index.js",
