@@ -11,23 +11,36 @@
 
 ## 索引地址
 
+**主地址**（跟随 `main`，缓存 5 分钟，发版后自动更新）：
+
 ```
 https://raw.githubusercontent.com/JasonChenccc/dsh-relaydeck/main/market/index.json
 ```
 
-镜像（jsDelivr 走 CDN，国内通常更稳）——**必须钉版本 tag，不要用 `@main`**：
+> ⚠️ **`raw.githubusercontent.com` 在部分网络下不可达。** 本机 2026-11-09 实测：DNS 解析正常，
+> 但 TCP/TLS 被重置（HTTP `000`，3/3 失败）；同一天早些时候它还是 1.4 秒正常 —— 属**间歇性**。
+> 抓不到时市场会因为 15 秒超时而整条失败。
+
+**备选地址**（同一份索引；下面的耗时是本机实测，均为钉死的 tag，内容不可变）：
+
+| 地址 | 实测 |
+|---|---|
+| `https://fastly.jsdelivr.net/gh/JasonChenccc/dsh-relaydeck@v0.1.1/market/index.json` | 200 · 1.58 s |
+| `https://gcore.jsdelivr.net/gh/JasonChenccc/dsh-relaydeck@v0.1.1/market/index.json` | 200 · 1.61 s |
+| `https://testingcf.jsdelivr.net/gh/JasonChenccc/dsh-relaydeck@v0.1.1/market/index.json` | 200 · 1.82 s |
+| `https://jsdelivr.b-cdn.net/gh/JasonChenccc/dsh-relaydeck@v0.1.1/market/index.json` | 200 · 2.40 s |
+
+> ⚠️ **不要用 `cdn.jsdelivr.net`（jsDelivr 主域）。** 本机实测它与 `raw.githubusercontent.com`
+> 一样被重置（HTTP `000`，3/3 失败）；而且它对移动引用 `@main` 还会缓存 **12 小时**
+> （`s-maxage=43200`，实测当时仍返回旧的 `0.1.0`）。用上面四个**备用端点**（钉 tag）则返回
+> `immutable`、缓存一年；代价是**每次发版都要更新这些行里的 tag**。
+
+若 GitHub 系域名整体不可达，可把仓库同步到 GitCode 后使用它自己的 raw 路径 —— 本机实测
+**0.22 s**，是全部候选中最快的：
 
 ```
-https://cdn.jsdelivr.net/gh/JasonChenccc/dsh-relaydeck@v0.1.1/market/index.json
+https://gitcode.com/<用户名>/<仓库>/raw/main/market/index.json
 ```
-
-> ⚠️ **不要用 `@main` 做镜像。** 实测 jsDelivr 对 `@main` 这种移动引用返回
-> `s-maxage=43200` —— 会缓存 **12 小时**：本次实测中 `@main` 仍返回旧的 `0.1.0`，
-> 而 `@v0.1.1` 立刻就是新的 `0.1.1`。
->
-> 用 tag 时返回 `immutable`，缓存一年且内容不可变；代价是**每次发版都要更新这一行的 tag**。
->
-> 主地址（raw）的缓存只有 5 分钟（`max-age=300`），跟随 `main` 自动更新，**不需要改**。
 
 ## 在 DSH 里添加
 
