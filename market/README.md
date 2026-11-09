@@ -15,11 +15,19 @@
 https://raw.githubusercontent.com/JasonChenccc/dsh-relaydeck/main/market/index.json
 ```
 
-镜像（dsh 抓取索引源的超时是 **15 秒**；jsDelivr 走 CDN，国内通常更稳）：
+镜像（jsDelivr 走 CDN，国内通常更稳）——**必须钉版本 tag，不要用 `@main`**：
 
 ```
-https://cdn.jsdelivr.net/gh/JasonChenccc/dsh-relaydeck@main/market/index.json
+https://cdn.jsdelivr.net/gh/JasonChenccc/dsh-relaydeck@v0.1.1/market/index.json
 ```
+
+> ⚠️ **不要用 `@main` 做镜像。** 实测 jsDelivr 对 `@main` 这种移动引用返回
+> `s-maxage=43200` —— 会缓存 **12 小时**：本次实测中 `@main` 仍返回旧的 `0.1.0`，
+> 而 `@v0.1.1` 立刻就是新的 `0.1.1`。
+>
+> 用 tag 时返回 `immutable`，缓存一年且内容不可变；代价是**每次发版都要更新这一行的 tag**。
+>
+> 主地址（raw）的缓存只有 5 分钟（`max-age=300`），跟随 `main` 自动更新，**不需要改**。
 
 ## 在 DSH 里添加
 
