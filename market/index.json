@@ -92,7 +92,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/JasonChenccc/dsh-relaydeck",
-            "commit": "2a0bcae1384a1a21c1eb3a439a8d9b22edaa79e3"
+            "commit": "023b5fd5a89ce69c1bb9343d2f27db0b8f1a3f25"
           },
           "engines": {
             "dsh": ">=0.1.0"
