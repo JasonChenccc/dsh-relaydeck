@@ -1,0 +1,104 @@
+{
+  "format": 1,
+  "title": {
+    "en": "RelayDeck Plugin Index",
+    "zh": "RelayDeck 插件索引"
+  },
+  "description": {
+    "en": "Community index for the RelayDeck multi-platform content relay plugin.",
+    "zh": "RelayDeck 多平台内容中继插件的社区索引。"
+  },
+  "metadata": {
+    "categories": {
+      "content": {
+        "title": {
+          "en": "Content operations",
+          "zh": "内容运营"
+        }
+      },
+      "automation": {
+        "title": {
+          "en": "Automation",
+          "zh": "自动化"
+        }
+      }
+    },
+    "labels": {
+      "verified": {
+        "title": {
+          "en": "Verified locally",
+          "zh": "本地已验证"
+        }
+      },
+      "experimental": {
+        "title": {
+          "en": "Experimental",
+          "zh": "实验性"
+        }
+      }
+    },
+    "sortKeys": {
+      "freshness": {
+        "title": {
+          "en": "Freshness",
+          "zh": "新鲜度"
+        },
+        "order": "desc"
+      }
+    }
+  },
+  "plugins": [
+    {
+      "name": "dsh-relaydeck",
+      "title": {
+        "en": "RelayDeck",
+        "zh": "RelayDeck"
+      },
+      "description": {
+        "en": "Content relay workbench for DeepSeek Harness: account login, creator monitoring, keyword collection, link download, publish prep, notifications.",
+        "zh": "DeepSeek Harness 的多平台内容中继工作台：账号登录、作品监控、关键词采集、链接下载、发布准备、通知。"
+      },
+      "icon": "icon.svg",
+      "author": "JasonChenccc",
+      "homepage": "https://github.com/JasonChenccc/dsh-relaydeck",
+      "repository": {
+        "url": "https://github.com/JasonChenccc/dsh-relaydeck"
+      },
+      "metadata": {
+        "category": "content",
+        "keywords": [
+          "douyin",
+          "抖音",
+          "xiaohongshu",
+          "小红书",
+          "relay",
+          "collect",
+          "monitor",
+          "download",
+          "publish",
+          "content"
+        ],
+        "labels": [
+          "verified"
+        ],
+        "sortKeys": {
+          "freshness": 1
+        }
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1794185257,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/JasonChenccc/dsh-relaydeck",
+            "commit": "2a0bcae1384a1a21c1eb3a439a8d9b22edaa79e3"
+          },
+          "engines": {
+            "dsh": ">=0.1.0"
+          }
+        }
+      ]
+    }
+  ]
+}
